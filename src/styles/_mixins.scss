@@ -1,0 +1,18 @@
+/* Breakpoints */
+$bps: (
+  sm: 480px,
+  md: 768px,
+  lg: 1024px,
+  xl: 1280px,
+);
+
+@mixin up($bp) {
+  @media (min-width: map-get($bps, $bp)) {
+    @content;
+  }
+}
+@mixin down($bp) {
+  @media (max-width: map-get($bps, $bp)) {
+    @content;
+  }
+}

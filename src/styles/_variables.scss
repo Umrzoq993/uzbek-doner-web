@@ -1,0 +1,21 @@
+:root {
+  --brand: #6c38ff;
+  --brand-2: #8b5cff;
+  --bg: #f7f8fb;
+  --surface: #fff;
+  --surface-2: #f2f3f7;
+  --line: rgba(18, 20, 30, 0.08);
+
+  --fg: #14161a;
+  --muted: #757f8b;
+
+  --r-s: 12px;
+  --r-m: 16px;
+  --r-l: 22px;
+  --shadow-1: 0 6px 18px rgba(17, 21, 33, 0.08);
+  --shadow-2: 0 16px 48px rgba(17, 21, 33, 0.12);
+
+  --fs-1: clamp(18px, 1.3vw, 20px);
+  --fs-2: 15px;
+  --fs-3: 13px;
+}
