@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo } from "react";
+import { ShoppingCart } from "lucide-react"; // chiroyli ikon
 import { useCart } from "../store/cart";
 
 export default function AppHeader() {
@@ -12,66 +13,33 @@ export default function AppHeader() {
     [items]
   );
 
-  const meta = useMemo(() => {
-    if (pathname === "/cart") return { title: "Savat" };
-    if (pathname === "/checkout") return { title: "To‘lov" };
-    return null;
-  }, [pathname]);
-
-  // 🔔 Badge anim
-  const badgeRef = useRef(null);
-  const prevRef = useRef(count);
-  useEffect(() => {
-    const badge = badgeRef.current;
-    if (!badge || count <= 0) {
-      prevRef.current = count;
-      return;
-    }
-    // re-trigger animations
-    badge.classList.remove("is-bump", "is-shake");
-    // force reflow
-    void badge.offsetWidth;
-    badge.classList.add("is-bump");
-    if (count > prevRef.current) {
-      badge.classList.add("is-shake");
-    }
-    prevRef.current = count;
-  }, [count]);
-
   return (
     <header className="header">
-      <div className="header__inner header__grid container">
-        {/* Chap */}
-        <div>
-          {meta ? (
-            <button
-              className="topbar__back"
-              aria-label="Orqaga"
-              onClick={() => nav(-1)}
-            >
-              ←
-            </button>
-          ) : (
-            <Link to="/" className="brand">
-              UzbekDoner
-            </Link>
-          )}
-        </div>
+      <div className="header__inner">
+        {/* Chapda: logo */}
+        <button
+          className="brand"
+          onClick={() => nav("/")}
+          aria-label="UzbekDoner bosh sahifa"
+        >
+          {/* public/logo-navbar.png */}
+          <img
+            src="/logo-navbar.png"
+            alt="UzbekDoner"
+            className="brand__logo"
+            loading="eager"
+            decoding="sync"
+          />
+        </button>
 
-        {/* O‘rta */}
-        <div className="header__title">{meta?.title || ""}</div>
-
-        {/* O‘ng: Savat */}
-        <div className="cart-ind">
-          <Link to="/cart" aria-label="Savat">
-            🧺 Savat
-          </Link>
-          {count > 0 && (
-            <span ref={badgeRef} className="cart-ind__badge">
-              {count}
-            </span>
-          )}
-        </div>
+        {/* O‘ngda: savat */}
+        <Link to="/cart" className="cart-ind cart-ind--lg" aria-label="Savat">
+          <span className="cart-ind__icon">
+            <ShoppingCart size={28} strokeWidth={2.25} />
+          </span>
+          {/* <span className="cart-ind__label">Savat</span> */}
+          {count > 0 && <span className="cart-ind__badge">{count}</span>}
+        </Link>
       </div>
     </header>
   );

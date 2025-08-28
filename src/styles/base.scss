@@ -1,6 +1,7 @@
 @use "./_variables.scss";
 @use "./_reset.scss";
 @use "sass:map";
+@use "sass:meta";
 
 /* -----------------------------
    Breakpoints & Helpers
@@ -12,13 +13,16 @@ $bps: (
   xl: 1280px,
 );
 
+/* Accepts either a key from $bps OR a raw number value like 640px */
 @mixin up($bp) {
-  @media (min-width: map.get($bps,$bp)) {
+  $val: if(meta.type-of($bp) == number, $bp, map.get($bps, $bp));
+  @media (min-width: $val) {
     @content;
   }
 }
 @mixin down($bp) {
-  @media (max-width: map.get($bps,$bp)) {
+  $val: if(meta.type-of($bp) == number, $bp, map.get($bps, $bp));
+  @media (max-width: $val) {
     @content;
   }
 }
@@ -75,6 +79,19 @@ $bps: (
   --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.08);
   --shadow-hover: 0 10px 28px rgba(0, 0, 0, 0.12);
   --paybar-h: 72px;
+  --z-header: 1000;
+  --z-catbar: 950;
+  --z-modal: 4000; /* modal hamma narsadan yuqorida */
+
+  /* Header & CatBar pin settings */
+  --header-h: 64px; /* header minimal height fallback */
+  --header-gap: 10px; /* header bilan catbar oralig‘i */
+}
+/* desktopda header biroz balandroq bo‘lishi mumkin */
+@media (min-width: 768px) {
+  :root {
+    --header-h: 70px;
+  }
 }
 
 /* -----------------------------
@@ -99,8 +116,9 @@ body {
 .container {
   @include container;
 }
+/* Header fixed bo‘lgani uchun sahifani pastga bosib turamiz */
 .page {
-  padding: 14px 0 120px;
+  padding: calc(var(--header-h) + var(--header-gap) + 14px) 0 120px;
   @include down(md) {
     padding-bottom: 160px;
   }
@@ -112,12 +130,17 @@ body {
 }
 
 /* -----------------------------
-   Header
+   Header (ALWAYS pinned)
 ------------------------------*/
 .header {
-  @include sticky(10px, 50);
-  @include container;
-  margin-bottom: 10px;
+  /* Fixed: har doim tepada, markazga yoyilgan container kengligida */
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1200px, 94vw);
+  z-index: var(--z-header);
+
   border-radius: 999px;
   @include card-surface(999px);
   backdrop-filter: saturate(140%) blur(8px);
@@ -125,18 +148,38 @@ body {
   background: color-mix(in oklab, var(--surface) 88%, transparent);
   border-color: color-mix(in oklab, var(--line) 70%, transparent);
   box-shadow: var(--shadow-soft);
+
   &__inner {
     padding: 10px 14px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    justify-content: space-between; /* logo chapda, savat o‘ngda */
+    gap: 12px;
+    min-height: var(--header-h);
   }
 }
 .brand {
-  font-weight: 900;
-  letter-spacing: 0.2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  padding: 6px 8px;
+  cursor: pointer;
 }
+.brand__logo {
+  height: 36px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+@media (min-width: 768px) {
+  .brand__logo {
+    height: 40px;
+  }
+}
+
+/* Savat chipi (kattaroq, chiroyli) */
 .cart-ind {
   position: relative;
   display: inline-flex;
@@ -146,11 +189,13 @@ body {
   background: var(--surface-2);
   border-radius: 9999px;
   transition: box-shadow 0.18s ease, transform 0.12s ease;
-  &:hover {
-    box-shadow: var(--shadow-soft);
+
+  &__icon {
+    display: inline-flex;
+    line-height: 0;
   }
-  &:active {
-    transform: translateY(1px);
+  &__label {
+    font-weight: 600;
   }
   &__badge {
     position: absolute;
@@ -161,13 +206,23 @@ body {
     border-radius: 9999px;
     font-size: 12px;
     padding: 2px 6px;
-    transform-origin: 70% 30%;
-    &.is-bump {
-      animation: badge-bump 360ms cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    &.is-shake {
-      animation: badge-shake 420ms ease-in-out;
-    }
+  }
+  &:hover {
+    box-shadow: var(--shadow-soft);
+  }
+  &:active {
+    transform: translateY(1px);
+  }
+}
+.cart-ind--lg {
+  padding: 9px 14px;
+  .cart-ind__icon svg {
+    width: 28px;
+    height: 28px;
+  }
+  .cart-ind__label {
+    font-size: 15px;
+    font-weight: 700;
   }
 }
 
@@ -221,6 +276,7 @@ body {
       rgba(0, 0, 0, 0.05) 0%,
       rgba(0, 0, 0, 0.35) 85%
     );
+    pointer-events: none;
   }
   &__content {
     position: absolute;
@@ -288,7 +344,6 @@ body {
       transform: scale(1.04);
     }
   }
-
   @include down(640px) {
     border-radius: 16px;
     &__nav {
@@ -398,6 +453,7 @@ body {
   display: grid;
   grid-template-rows: auto 1fr;
   cursor: pointer;
+
   &__media {
     aspect-ratio: 4/3;
     background: var(--surface-2);
@@ -462,6 +518,7 @@ body {
   position: relative;
   overflow: hidden;
   transition: transform 0.12s ease, box-shadow 0.18s ease, background 0.18s ease;
+
   &--primary {
     @include gradient-brand;
     color: #fff;
@@ -497,9 +554,10 @@ body {
   background: rgba(0, 0, 0, 0.36);
   display: grid;
   place-items: end center;
-  z-index: 70;
+  z-index: var(--z-modal); /* <<< headerdan yuqori */
   padding: 14px;
 }
+
 .sheet {
   width: 100%;
   max-width: 720px;
@@ -509,10 +567,14 @@ body {
   border-top-right-radius: 24px;
   overflow: auto;
   animation: su 0.26s ease;
+  z-index: calc(var(--z-modal) + 1); /* ehtiyot uchun */
+  position: relative; /* close tugma uchun stacking context */
+
   &--product {
     max-width: min(900px, 96vw);
     position: relative;
   }
+
   &__head {
     position: sticky;
     top: 0;
@@ -523,37 +585,14 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 12px 14px;
+    z-index: 1; /* sarlavha tanasi ustida */
   }
-  &__title {
-    font-weight: 900;
-  }
-  &__body {
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  &__foot {
-    position: sticky;
-    bottom: 0;
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.7),
-      var(--surface)
-    );
-    backdrop-filter: blur(8px);
-    border-top: 1px solid var(--line);
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 14px;
-  }
+
   &__close {
     position: absolute;
     right: 10px;
     top: 10px;
-    z-index: 3;
+    z-index: 2; /* rasmdan va head’dan yuqori */
     width: 36px;
     height: 36px;
     border-radius: 999px;
@@ -562,6 +601,7 @@ body {
     cursor: pointer;
   }
 }
+
 .product-hero {
   position: relative;
   width: 100%;
@@ -709,22 +749,29 @@ body {
 }
 
 /* -----------------------------
-   Catbar (Sticky categories)
+   Catbar (pinned under header)
 ------------------------------*/
 .catbar {
-  @include sticky(70px, 45);
-  overflow: hidden;
+  /* AppHeader fixed bo‘lgani uchun CatBar top = header height + gap */
+  @include sticky(
+    calc(env(safe-area-inset-top, 0px) + var(--header-h) + var(--header-gap)),
+    950
+  );
   @include card-surface(999px);
   @include container;
+  overflow: hidden;
   margin: 12px auto;
   padding: 6px;
-  position: sticky;
+  z-index: var(--z-catbar); /* headerdan pastda */
+
   &__inner {
     position: relative;
     display: flex;
     gap: 8px;
     overflow-x: auto;
     padding: 6px 10px;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
     @include no-scrollbar;
   }
   &__indicator {
@@ -739,6 +786,7 @@ body {
     transition: left 0.34s cubic-bezier(0.22, 1, 0.36, 1),
       width 0.34s cubic-bezier(0.22, 1, 0.36, 1);
     z-index: 0;
+    pointer-events: none;
   }
   &::before,
   &::after {
@@ -768,6 +816,7 @@ body {
   white-space: nowrap;
   font-weight: 700;
   cursor: pointer;
+  touch-action: manipulation;
   transition: transform 0.12s ease, color 0.18s ease, box-shadow 0.18s ease,
     background 0.18s ease;
   &:hover {
@@ -901,6 +950,7 @@ body {
   box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.04);
   position: relative;
   z-index: 1;
+
   &__grid {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
@@ -1073,7 +1123,7 @@ body {
 
 /* === Product-card inline qty stepper === */
 .qty-chip {
-  @include pill(); /* border, bg, radius, shadow */
+  @include pill();
   display: grid;
   grid-template-columns: 36px 1fr 36px;
   align-items: center;
@@ -1106,7 +1156,6 @@ body {
       outline-offset: 2px;
     }
   }
-
   &__num {
     text-align: center;
     font-weight: 900;
@@ -1117,7 +1166,6 @@ body {
     }
   }
 
-  /* aniq 420px breakpoint – avvalgidek saqladik */
   @media (max-width: 420px) {
     grid-template-columns: 32px 1fr 32px;
     height: 36px;
@@ -1159,104 +1207,4 @@ body {
   .hero__image {
     animation: none !important;
   }
-}
-
-/* --- Fix: Catbar indicator should not block taps; improve mobile touch --- */
-.catbar__inner {
-  position: relative;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x; /* allow horizontal scroll without killing taps */
-}
-
-.catbar__indicator {
-  position: absolute;
-  left: var(--ind-x, 0);
-  top: 4px;
-  height: calc(100% - 8px);
-  width: var(--ind-w, 0);
-  border-radius: 9999px;
-  background: var(--surface-2);
-  z-index: 0; /* behind chips */
-  pointer-events: none; /* never intercept taps */
-  transition: left 0.2s ease, width 0.2s ease;
-}
-
-.chip {
-  position: relative;
-  z-index: 1; /* above indicator */
-  touch-action: manipulation; /* faster taps on mobile */
-}
-
-/* --- Fix: Catbar indicator should not block taps; improve mobile touch --- */
-.catbar__inner {
-  position: relative;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x; /* horizontal scroll tapni o‘ldirmasin */
-}
-
-.catbar__indicator {
-  position: absolute;
-  left: var(--ind-x, 0);
-  top: 4px;
-  height: calc(100% - 8px);
-  width: var(--ind-w, 0);
-  border-radius: 9999px;
-  background: var(--surface-2);
-  z-index: 0; /* chipdan pastda */
-  pointer-events: none; /* hech qachon bosishni to‘smasin */
-  transition: left 0.2s ease, width 0.2s ease;
-}
-
-.chip {
-  position: relative;
-  z-index: 1; /* indikator ustida */
-  touch-action: manipulation; /* mobil tap tezroq */
-}
-
-/* --- Extra safety: ensure chips get events, masks don't --- */
-.catbar,
-.catbar__inner,
-.catbar .chip {
-  pointer-events: auto;
-}
-.catbar__inner::before,
-.catbar__inner::after {
-  pointer-events: none;
-}
-
-/* --- CatBar mobil tap fixlari --- */
-.catbar__inner {
-  position: relative;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x; /* gorizontal skroll tapni o‘ldirmasin */
-}
-
-.catbar__indicator {
-  position: absolute;
-  left: var(--ind-x, 0);
-  top: 4px;
-  height: calc(100% - 8px);
-  width: var(--ind-w, 0);
-  border-radius: 9999px;
-  background: var(--surface-2);
-  z-index: 0; /* chiplardan pastda */
-  pointer-events: none; /* hech qachon bosishni to‘smasin */
-  transition: left 0.2s ease, width 0.2s ease;
-}
-
-.chip {
-  position: relative;
-  z-index: 1; /* indikator ustida */
-  touch-action: manipulation; /* mobil tapni tezlashtiradi */
-}
-
-/* gradient maskalar bosishni to‘smasin */
-.catbar,
-.catbar__inner,
-.catbar .chip {
-  pointer-events: auto;
-}
-.catbar__inner::before,
-.catbar__inner::after {
-  pointer-events: none;
 }
