@@ -237,6 +237,7 @@ export default function Home() {
               className={`chip ${c.id === activeCatId ? "is-active" : ""}`}
               onClick={() => scrollToSection(c.id)}
               onPointerUp={(e) => {
+                // mobil/pen pointerlarda onClick bilan kechikish bo‘lishi mumkin — zudlik bilan ishlatamiz
                 if (e.pointerType && e.pointerType !== "mouse") {
                   scrollToSection(c.id);
                 }
