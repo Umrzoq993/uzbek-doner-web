@@ -79,6 +79,8 @@ function ProductCard({ product, onAdd, onOpen }) {
             className="btn--primary"
             onClick={(e) => {
               e.stopPropagation();
+              e.currentTarget.classList.add("is-pop");
+              setTimeout(() => e.currentTarget.classList.remove("is-pop"), 180);
               onAdd();
             }}
           >

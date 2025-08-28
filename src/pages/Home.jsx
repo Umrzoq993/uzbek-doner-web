@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import HeroCarousel from "../components/HeroCarousel";
 import ProductSheet from "../components/ProductSheet";
@@ -31,7 +30,24 @@ export default function Home() {
   const loadMoreRef = useRef(null);
   const scrollingByClickRef = useRef(false);
 
-  // kategoriyalar
+  // Catbar sliding indikator (ixtiyoriy, bo‘lsa ishlaydi)
+  const catbarInnerRef = useRef(null);
+  const chipRefs = useRef({});
+
+  const moveIndicatorTo = (catId) => {
+    const inner = catbarInnerRef.current;
+    const el = chipRefs.current[catId];
+    if (!inner || !el) return;
+    inner.style.setProperty("--ind-x", `${el.offsetLeft}px`);
+    inner.style.setProperty("--ind-w", `${el.offsetWidth}px`);
+    const targetLeft = Math.max(
+      0,
+      el.offsetLeft - (inner.clientWidth - el.offsetWidth) / 2
+    );
+    inner.scrollTo({ left: targetLeft, behavior: "smooth" });
+  };
+
+  // 1) kategoriyalar
   useEffect(() => {
     (async () => {
       try {
@@ -41,11 +57,13 @@ export default function Home() {
         setVisibleIds(first);
         nextIndexRef.current = BATCH_SIZE;
         setActiveCatId(first[0] || null);
+        // indikatorni dastlab joylashtirish
+        requestAnimationFrame(() => moveIndicatorTo(first[0]));
       } catch {}
     })();
   }, []);
 
-  // ko‘rinayotgan kategoriyalar mahsulotlari
+  // 2) ko‘rinayotgan kategoriyalar mahsulotlari
   useEffect(() => {
     visibleIds.forEach((catId) => {
       if (prodMap[catId] || loadingMap[catId]) return;
@@ -56,11 +74,12 @@ export default function Home() {
     });
   }, [visibleIds, prodMap, loadingMap]);
 
-  // infinite load
+  // 3) infinite load
   useEffect(() => {
     if (!cats.length) return;
     const el = loadMoreRef.current;
     if (!el) return;
+
     const io = new IntersectionObserver(
       (entries) => {
         if (!entries[0].isIntersecting) return;
@@ -78,7 +97,7 @@ export default function Home() {
     return () => io.disconnect();
   }, [cats]);
 
-  // chipga bosilganda scroll
+  // 4) chipga bosilganda scroll
   const scrollToSection = (catId) => {
     const el = sectionRefs.current[catId];
     if (!el) return;
@@ -86,10 +105,11 @@ export default function Home() {
     const y = el.getBoundingClientRect().top + window.scrollY - STICKY_OFFSET;
     window.scrollTo({ top: y, behavior: "smooth" });
     setActiveCatId(catId);
+    moveIndicatorTo(catId);
     setTimeout(() => (scrollingByClickRef.current = false), 600);
   };
 
-  // aktiv seksiyani kuzatish
+  // 5) aktiv seksiyani kuzatish
   useEffect(() => {
     const ids = visibleIds;
     if (!ids.length) return;
@@ -105,7 +125,10 @@ export default function Home() {
           )[0];
         if (!topEntry) return;
         const catId = Number(topEntry.target.getAttribute("data-cat-id"));
-        if (catId && catId !== activeCatId) setActiveCatId(catId);
+        if (catId && catId !== activeCatId) {
+          setActiveCatId(catId);
+          moveIndicatorTo(catId);
+        }
       },
       {
         rootMargin: `-${STICKY_OFFSET + 20}px 0px -70% 0px`,
@@ -119,7 +142,7 @@ export default function Home() {
     return () => obs.disconnect();
   }, [visibleIds, activeCatId]);
 
-  // aktiv chipni markazga keltirish
+  // 6) aktiv chipni ko‘rinishga olib kelish
   useEffect(() => {
     const btn = catBtnRefs.current[activeCatId];
     if (btn?.scrollIntoView) {
@@ -131,7 +154,7 @@ export default function Home() {
     }
   }, [activeCatId]);
 
-  // tepaga qaytish tugmasi
+  // 7) tepaga qaytish tugmasi
   useEffect(() => {
     const onScroll = () => setShowTop(window.scrollY > 600);
     onScroll();
@@ -140,18 +163,51 @@ export default function Home() {
   }, []);
 
   const slides = useMemo(() => heroSlides, []);
+
+  // 🧺 Cart bilan sinxron qty xaritasi
+  const qtyMap = useMemo(() => {
+    const m = new Map();
+    for (const it of cart.items) {
+      const id = it.product?.id;
+      if (id == null) continue;
+      m.set(id, (m.get(id) || 0) + (it.qty || 0));
+    }
+    return m;
+  }, [cart.items]);
+
   const addToCart = (p, qty = 1) => cart.add(p, qty, null);
+
+  const inc = (p) => {
+    cart.add(p, 1, null);
+  };
+  const dec = (p) => {
+    const idx = cart.items.findIndex((it) => it.product.id === p.id);
+    if (idx < 0) return;
+    const cur = cart.items[idx].qty;
+    if (cur <= 1) cart.remove(idx);
+    else cart.setQty(idx, cur - 1);
+  };
 
   return (
     <section className="page">
+      {/* Hero — umumiy bannerlar, autoplay */}
       <HeroCarousel slides={slides} height={360} auto delay={5000} />
 
+      {/* Sticky kategoriya chips + sliding indikator */}
       <nav className="catbar">
-        <div className="catbar__inner">
+        <div
+          className="catbar__inner no-scrollbar"
+          ref={catbarInnerRef}
+          style={{ position: "relative" }}
+        >
+          <div className="catbar__indicator" />
           {cats.map((c) => (
             <button
               key={c.id}
-              ref={(el) => (catBtnRefs.current[c.id] = el)}
+              ref={(el) => {
+                catBtnRefs.current[c.id] = el;
+                chipRefs.current[c.id] = el;
+              }}
               className={`chip ${c.id === activeCatId ? "is-active" : ""}`}
               onClick={() => scrollToSection(c.id)}
               title={c.name}
@@ -162,6 +218,7 @@ export default function Home() {
         </div>
       </nav>
 
+      {/* Seksiyalar */}
       <div className="container" style={{ display: "grid", gap: 22 }}>
         {visibleIds.map((catId) => {
           const cat = cats.find((x) => x.id === catId);
@@ -171,6 +228,7 @@ export default function Home() {
           return (
             <section
               key={catId}
+              id={`cat-${catId}`}
               data-cat-id={catId}
               ref={(n) => (sectionRefs.current[catId] = n)}
               className="cat-section"
@@ -181,26 +239,41 @@ export default function Home() {
                 </h2>
               </div>
 
-              <div className="grid" style={{ gap: 14 }}>
+              <div
+                className="grid"
+                style={{
+                  gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+                  gap: 14,
+                }}
+              >
                 {loading
                   ? Array.from({ length: 8 }).map((_, i) => (
                       <SkeletonCard key={i} />
                     ))
-                  : list.map((p) => (
-                      <ProductCard
-                        key={p.id}
-                        product={p}
-                        onAdd={() => addToCart(p)}
-                        onOpen={() => setChosen(p)}
-                      />
-                    ))}
+                  : list.map((p) => {
+                      const qty = qtyMap.get(p.id) || 0;
+                      return (
+                        <ProductCard
+                          key={p.id}
+                          product={p}
+                          qty={qty}
+                          onAdd={() => addToCart(p)}
+                          onInc={() => inc(p)}
+                          onDec={() => dec(p)}
+                          onOpen={() => setChosen(p)}
+                        />
+                      );
+                    })}
               </div>
             </section>
           );
         })}
+
+        {/* infinite sentinel */}
         <div ref={loadMoreRef} style={{ height: 10 }} />
       </div>
 
+      {/* Modal */}
       <ProductSheet
         open={!!chosen}
         product={chosen}
@@ -211,6 +284,7 @@ export default function Home() {
         }}
       />
 
+      {/* Tepaga qaytish */}
       {showTop && (
         <button
           className="scrolltop"
@@ -224,8 +298,21 @@ export default function Home() {
   );
 }
 
-/* --- ichki --- */
-function ProductCard({ product, onAdd, onOpen }) {
+/* --- Ichki komponentlar --- */
+
+function ProductCard({ product, qty, onAdd, onInc, onDec, onOpen }) {
+  const hasQty = qty > 0;
+  const numRef = useRef(null);
+
+  // 🔢 qty o‘zgarganda “pop” anim
+  useEffect(() => {
+    const n = numRef.current;
+    if (!n) return;
+    n.classList.remove("is-pop");
+    void n.offsetWidth; // reflow
+    n.classList.add("is-pop");
+  }, [qty]);
+
   return (
     <div className="card product-card" onClick={onOpen} role="button">
       <div className="product-card__media">
@@ -234,17 +321,49 @@ function ProductCard({ product, onAdd, onOpen }) {
 
       <div className="product-card__body">
         <div className="product-card__title clamp-2">{product.name}</div>
+
         <div className="product-card__footer">
-          <div className="product-card__price">{fmt(product.price)}</div>
-          <Button
-            className="btn--primary"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAdd();
-            }}
-          >
-            Qo‘shish
-          </Button>
+          <div className="product-card__price">
+            {Number(product.price || 0).toLocaleString("uz-UZ")} so‘m
+          </div>
+
+          {hasQty ? (
+            <div className="qty-chip" onClick={(e) => e.stopPropagation()}>
+              <button
+                className="qty-chip__btn"
+                aria-label="Kamaytirish"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDec();
+                }}
+              >
+                −
+              </button>
+              <div ref={numRef} className="qty-chip__num" aria-live="polite">
+                {qty}
+              </div>
+              <button
+                className="qty-chip__btn"
+                aria-label="Ko‘paytirish"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onInc();
+                }}
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            <Button
+              className="btn--primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAdd();
+              }}
+            >
+              Qo‘shish
+            </Button>
+          )}
         </div>
       </div>
     </div>
