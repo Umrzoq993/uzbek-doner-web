@@ -98,9 +98,35 @@ export default function Home() {
   }, [cats]);
 
   // 4) chipga bosilganda scroll
+  // 4) chipga bosilganda scroll
   const scrollToSection = (catId) => {
-    const el = sectionRefs.current[catId];
-    if (!el) return;
+    let el = sectionRefs.current[catId];
+
+    // Seksiyasi hali DOMga chizilmagan bo‘lsa (lazy render) — avval ko‘rinadigan ro‘yxatga qo‘shamiz
+    if (!el) {
+      setVisibleIds((prev) => {
+        if (prev.includes(catId)) return prev;
+        return [...prev, catId]; // tartibni saqlash uchun oxiriga qo‘shish kifoya
+      });
+
+      scrollingByClickRef.current = true;
+
+      // DOM yangilangach, shu seksiyaga smooth scroll qilamiz
+      requestAnimationFrame(() => {
+        const n = sectionRefs.current[catId];
+        if (!n) return;
+        const y =
+          n.getBoundingClientRect().top + window.scrollY - STICKY_OFFSET;
+        window.scrollTo({ top: y, behavior: "smooth" });
+        setActiveCatId(catId);
+        moveIndicatorTo(catId);
+        setTimeout(() => (scrollingByClickRef.current = false), 600);
+      });
+
+      return;
+    }
+
+    // Seksiyasi DOMda bo‘lsa — darhol skroll
     scrollingByClickRef.current = true;
     const y = el.getBoundingClientRect().top + window.scrollY - STICKY_OFFSET;
     window.scrollTo({ top: y, behavior: "smooth" });
