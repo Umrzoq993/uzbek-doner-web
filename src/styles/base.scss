@@ -1518,3 +1518,18 @@ body {
     text-align: center;
   }
 }
+
+/* Sticky kategoriya bar */
+.catbar__inner {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px;
+
+  /* scrollbarni yashirish — barcha brauzerlar uchun */
+  -ms-overflow-style: none; /* IE/Edge eski */
+  scrollbar-width: none; /* Firefox */
+}
+.catbar__inner::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
