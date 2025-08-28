@@ -210,6 +210,11 @@ export default function Home() {
               }}
               className={`chip ${c.id === activeCatId ? "is-active" : ""}`}
               onClick={() => scrollToSection(c.id)}
+              onPointerUp={(e) => {
+                if (e.pointerType && e.pointerType !== "mouse") {
+                  scrollToSection(c.id);
+                }
+              }}
               title={c.name}
             >
               {c.name}

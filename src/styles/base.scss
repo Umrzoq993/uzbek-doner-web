@@ -1186,3 +1186,40 @@ body {
   z-index: 1; /* above indicator */
   touch-action: manipulation; /* faster taps on mobile */
 }
+
+/* --- Fix: Catbar indicator should not block taps; improve mobile touch --- */
+.catbar__inner {
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x; /* horizontal scroll tapni o‘ldirmasin */
+}
+
+.catbar__indicator {
+  position: absolute;
+  left: var(--ind-x, 0);
+  top: 4px;
+  height: calc(100% - 8px);
+  width: var(--ind-w, 0);
+  border-radius: 9999px;
+  background: var(--surface-2);
+  z-index: 0; /* chipdan pastda */
+  pointer-events: none; /* hech qachon bosishni to‘smasin */
+  transition: left 0.2s ease, width 0.2s ease;
+}
+
+.chip {
+  position: relative;
+  z-index: 1; /* indikator ustida */
+  touch-action: manipulation; /* mobil tap tezroq */
+}
+
+/* --- Extra safety: ensure chips get events, masks don't --- */
+.catbar,
+.catbar__inner,
+.catbar .chip {
+  pointer-events: auto;
+}
+.catbar__inner::before,
+.catbar__inner::after {
+  pointer-events: none;
+}
