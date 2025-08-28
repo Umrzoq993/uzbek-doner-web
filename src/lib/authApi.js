@@ -1,7 +1,12 @@
 import axios from "axios";
 
+const BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_BASE ||
+  "https://uzbekdoner.adminsite.uz";
+
 const authClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: BASE,
   timeout: 15000,
 });
 

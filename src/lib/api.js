@@ -1,7 +1,11 @@
 import axios from "axios";
 import { toastError } from "./toast";
 
-const BASE = import.meta.env.VITE_API_BASE || "https://uzbekdoner.adminsite.uz";
+const BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_BASE ||
+  "https://uzbekdoner.adminsite.uz";
+
 const http = axios.create({ baseURL: BASE, timeout: 20000 });
 
 // ===== Token storage =====
@@ -12,31 +16,17 @@ export const tokenStore = {
   clear: () => localStorage.removeItem(tokKey),
 };
 
-// ===== Avto-login sozlamalari (opt-in) =====
-const U = import.meta.env.VITE_AUTH_USERNAME;
-const P = import.meta.env.VITE_AUTH_PASSWORD;
-const AUTO = Boolean(U && P);
-
-function decodeExp(token) {
-  try {
-    const p = JSON.parse(atob(token.split(".")[1]));
-    return p?.exp ? p.exp * 1000 : 0;
-  } catch {
-    return 0;
-  }
-}
-function isExpired(token) {
-  if (!token) return true;
-  const exp = decodeExp(token);
-  return !exp || Date.now() > exp - 15_000; // 15s buffer
-}
-
+// ===== Ixtiyoriy: Avtologin (env orqali) =====
+const AUTO_USER = import.meta.env.VITE_AUTH_USERNAME || "";
+const AUTO_PASS = import.meta.env.VITE_AUTH_PASSWORD || "";
 let authPromise = null;
+
 async function backgroundLogin() {
+  if (!AUTO_USER || !AUTO_PASS) return;
   const form = new URLSearchParams();
   form.set("grant_type", "password");
-  form.set("username", U);
-  form.set("password", P);
+  form.set("username", AUTO_USER);
+  form.set("password", AUTO_PASS);
   form.set("scope", "");
   form.set("client_id", "string");
   form.set("client_secret", "string");
@@ -44,22 +34,16 @@ async function backgroundLogin() {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
   });
   tokenStore.set(data?.access_token || "");
-  return data;
 }
+
 async function ensureAuthIfNeeded() {
-  if (!AUTO) return;
-  const t = tokenStore.get();
-  if (!t || isExpired(t)) {
-    if (!authPromise)
-      authPromise = backgroundLogin().finally(() => {
-        authPromise = null;
-      });
-    await authPromise;
-  }
+  if (tokenStore.get() || !AUTO_USER || !AUTO_PASS) return;
+  // bir martalik login
+  authPromise = authPromise || backgroundLogin();
+  await authPromise;
 }
 
 // ===== Interceptors =====
-// Request interceptor
 http.interceptors.request.use(async (cfg) => {
   await ensureAuthIfNeeded();
   const t = tokenStore.get();
@@ -67,7 +51,6 @@ http.interceptors.request.use(async (cfg) => {
   return cfg;
 });
 
-// Response interceptor (401 bo‘lsa retry)
 http.interceptors.response.use(
   (r) => r,
   async (err) => {
@@ -77,7 +60,7 @@ http.interceptors.response.use(
       err?.response?.status === 401 ||
       /Could not validate credentials/i.test(detail);
 
-    if (AUTO && unauth && !cfg._retry) {
+    if (AUTO_USER && AUTO_PASS && unauth && !cfg._retry) {
       try {
         cfg._retry = true;
         await backgroundLogin();
@@ -86,7 +69,7 @@ http.interceptors.response.use(
         if (t) cfg.headers.Authorization = `Bearer ${t}`;
         return http(cfg);
       } catch (e) {
-        /* agar bu ham xato qilsa, pastdagi xabar ishlaydi */
+        /* qayta sinash ham yiqilsa — pastda xabar beramiz */
       }
     }
 
@@ -97,7 +80,7 @@ http.interceptors.response.use(
   }
 );
 
-// ===== Auth qo‘lda chaqirish uchun =====
+// ===== Qo‘lda login (UI dan chaqirish uchun) =====
 export const AuthAPI = {
   async loginUsernamePassword({ username, password }) {
     const form = new URLSearchParams();
@@ -121,6 +104,7 @@ const mapCat = (c) => ({
   name: c.name_uz || c.name_ru || "Kategoriya",
   imageUrl: c.photo?._url || "",
 });
+
 const mapProd = (p) => ({
   id: p.product_id,
   name: p.name_uz || p.name_ru || "Mahsulot",
