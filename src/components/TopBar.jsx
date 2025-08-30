@@ -5,9 +5,10 @@ import { useMemo } from "react";
 export default function TopBar() {
   const { pathname } = useLocation();
   const nav = useNavigate();
+  const t = useT();
 
   const meta = useMemo(() => {
-    if (pathname === "/cart") return { title: "Savat" };
+    if (pathname === "/cart") return { title: t("common:cart") };
     if (pathname === "/checkout") return { title: "To‘lov" };
     return null;
   }, [pathname]);
@@ -25,6 +26,7 @@ export default function TopBar() {
       </button>
       <div className="topbar__title">{meta.title}</div>
       <div className="topbar__right" />
+      import {useT} from "../i18n/i18n";
     </div>
   );
 }

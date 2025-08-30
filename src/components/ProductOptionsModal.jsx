@@ -1,15 +1,32 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Button from "./ui/Button";
+import { useT, useMoneyFormatter } from "../i18n/i18n";
+import { useLangStore } from "../store/lang";
 
 const PRESET = {
   sizes: [
-    { value: "regular", label: "O‘rtacha", price: 0 },
-    { value: "large", label: "Katta", price: 3000 },
+    { value: "regular", label_uz: "O‘rtacha", label_ru: "Средний", price: 0 },
+    { value: "large", label_uz: "Katta", label_ru: "Большой", price: 3000 },
   ],
   extras: [
-    { key: "cheese", label: "Qo‘shimcha pishloq", price: 3000 },
-    { key: "sauce", label: "Qo‘shimcha sous", price: 2000 },
-    { key: "meat", label: "Qo‘shimcha go‘sht", price: 5000 },
+    {
+      key: "cheese",
+      label_uz: "Qo‘shimcha pishloq",
+      label_ru: "Доп. сыр",
+      price: 3000,
+    },
+    {
+      key: "sauce",
+      label_uz: "Qo‘shimcha sous",
+      label_ru: "Доп. соус",
+      price: 2000,
+    },
+    {
+      key: "meat",
+      label_uz: "Qo‘shimcha go‘sht",
+      label_ru: "Доп. мясо",
+      price: 5000,
+    },
   ],
 };
 
@@ -19,6 +36,9 @@ export default function ProductOptionsModal({
   product,
   onConfirm,
 }) {
+  const t = useT();
+  const lang = useLangStore((s) => s.lang);
+  const fmtMoney = useMoneyFormatter();
   const [size, setSize] = useState(PRESET.sizes[0]);
   const [spicy, setSpicy] = useState(false);
   const [extras, setExtras] = useState([]);
@@ -43,15 +63,18 @@ export default function ProductOptionsModal({
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <div className="modal-title">{product?.name}</div>
-          <button className="modal-x" onClick={onClose}>
+          <div className="modal-title">
+            {lang === "ru"
+              ? product?.name_ru || product?.name
+              : product?.name_uz || product?.name}
+          </div>
+          <button className="modal-x" onClick={onClose} aria-label="×">
             ✕
           </button>
         </div>
-
         <div className="modal-body">
           <div className="opt-block">
-            <div className="opt-title">Hajm</div>
+            <div className="opt-title">{t("product:size")}</div>
             <div className="opt-row">
               {PRESET.sizes.map((s) => (
                 <button
@@ -59,15 +82,14 @@ export default function ProductOptionsModal({
                   className={`tag ${size.value === s.value ? "is-active" : ""}`}
                   onClick={() => setSize(s)}
                 >
-                  {s.label}
-                  {s.price > 0 ? ` +${s.price.toLocaleString()} so‘m` : ""}
+                  {lang === "ru" ? s.label_ru : s.label_uz}
+                  {s.price > 0 ? ` +${fmtMoney(s.price)}` : ""}
                 </button>
               ))}
             </div>
           </div>
-
           <div className="opt-block">
-            <div className="opt-title">Qo‘shimchalar</div>
+            <div className="opt-title">{t("product:extras")}</div>
             <div className="opt-row">
               {PRESET.extras.map((ex) => {
                 const on = extras.some((e) => e.key === ex.key);
@@ -81,27 +103,26 @@ export default function ProductOptionsModal({
                         : setExtras([...extras, ex])
                     }
                   >
-                    {ex.label} +{ex.price.toLocaleString()} so‘m
+                    {lang === "ru" ? ex.label_ru : ex.label_uz} +
+                    {fmtMoney(ex.price)}
                   </button>
                 );
               })}
             </div>
           </div>
-
           <label className="chk">
             <input
               type="checkbox"
               checked={spicy}
               onChange={(e) => setSpicy(e.target.checked)}
             />
-            <span>Achchiq</span>
+            <span>{t("product:spicy")}</span>
           </label>
         </div>
-
         <div className="modal-foot">
           <div className="modal-total">
-            Jami:{" "}
-            <b>{(Number(product?.price || 0) + delta).toLocaleString()} so‘m</b>
+            {t("checkout:total")}:{" "}
+            <b>{fmtMoney(Number(product?.price || 0) + delta)}</b>
           </div>
           <Button
             className="btn--primary"
@@ -110,7 +131,7 @@ export default function ProductOptionsModal({
               onClose();
             }}
           >
-            Savatga qo‘shish
+            {t("common:add_to_cart")}
           </Button>
         </div>
       </div>

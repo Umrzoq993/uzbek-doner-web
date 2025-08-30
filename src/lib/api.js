@@ -101,16 +101,25 @@ export const AuthAPI = {
 // ===== Menu =====
 const mapCat = (c) => ({
   id: c.category_id,
+  // preserve legacy "name" (Uzbek priority) for backward compatibility
   name: c.name_uz || c.name_ru || "Kategoriya",
+  name_uz: c.name_uz || "",
+  name_ru: c.name_ru || "",
   imageUrl: c.photo?._url || "",
 });
 
 const mapProd = (p) => ({
   id: p.product_id,
+  // legacy single name/description fields (Uzbek priority)
   name: p.name_uz || p.name_ru || "Mahsulot",
+  description: p.description_uz || p.description_ru || "",
+  // language specific fields
+  name_uz: p.name_uz || "",
+  name_ru: p.name_ru || "",
+  description_uz: p.description_uz || "",
+  description_ru: p.description_ru || "",
   price: Number(p.price || 0),
   imageUrl: p.photo?._url || "",
-  description: p.description_uz || p.description_ru || "",
   categoryId: p?.category?.category_id || null,
 });
 

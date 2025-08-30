@@ -1,64 +1,61 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useT, useMoneyFormatter } from "../i18n/i18n";
+import { useLangStore } from "../store/lang";
 import { useCart } from "../store/cart";
 import Img from "./Img";
 
-/* format helper */
-const fmt = (n) => `${Number(n || 0).toLocaleString("uz-UZ")} so‘m`;
+// Helper format (replaced by hook inside component but kept fallback for non-hook usage)
+const fallbackFmt = (n) => `${Number(n || 0).toLocaleString("uz-UZ")} so‘m`;
 
-/* Safe readers (API variantlarini qamrab oladi) */
 const titleOf = (p) =>
-  p?.title ??
-  p?.name ??
-  p?.name_uz ??
-  p?.name_ru ??
-  p?.product?.name ??
-  "Mahsulot";
-
+  p?.title || p?.name || p?.name_uz || p?.name_ru || p?.product?.name || "";
 const imgOf = (p) =>
-  p?.img ??
-  p?.image ??
-  p?.imageUrl ??
-  p?.photo?._url ??
-  p?.images?.[0] ??
-  p?.product?.image ??
-  p?.product?.photo?._url ??
+  p?.img ||
+  p?.image ||
+  p?.imageUrl ||
+  p?.photo?._url ||
+  p?.images?.[0] ||
+  p?.product?.image ||
+  p?.product?.photo?._url ||
   "";
-
 const priceOf = (p) =>
   Number(
-    p?.price ??
-      p?.priceUZS ??
-      p?.amount ??
-      p?.product?.price ??
-      p?.product?.amount ??
+    p?.price ||
+      p?.priceUZS ||
+      p?.amount ||
+      p?.product?.price ||
+      p?.product?.amount ||
       0
   );
 
 export default function ProductSheet({ open, product, onClose, onAdd }) {
+  const t = useT();
+  const lang = useLangStore((s) => s.lang);
+  const fmtMoney = useMoneyFormatter();
   const { add } = useCart();
   const [qty, setQty] = useState(1);
 
   useEffect(() => setQty(1), [product?.id]);
 
-  /* Compute memoized values BEFORE any conditional return so hook order is stable */
-  const title = useMemo(() => titleOf(product), [product]);
+  const title = useMemo(() => {
+    if (!product) return "";
+    if (lang === "ru") return product.name_ru || titleOf(product);
+    return product.name_uz || titleOf(product);
+  }, [product, lang]);
   const price = useMemo(() => priceOf(product), [product]);
   const img = useMemo(() => imgOf(product), [product]);
   const total = useMemo(() => (price || 0) * (qty || 0), [price, qty]);
 
   const isOpen = open == null ? !!product : !!open;
-  if (!isOpen || !product) return null; // safe now; hooks above always run
+  if (!isOpen || !product) return null;
 
   const dec = () => setQty((q) => Math.max(1, q - 1));
   const inc = () => setQty((q) => Math.min(99, q + 1));
 
   const addToCart = () => {
     if (!qty || !price) return;
-    if (typeof onAdd === "function") {
-      onAdd(qty);
-    } else {
-      add(product, qty);
-    }
+    if (typeof onAdd === "function") onAdd(qty);
+    else add(product, qty);
     onClose?.();
   };
 
@@ -74,17 +71,14 @@ export default function ProductSheet({ open, product, onClose, onAdd }) {
         className="sheet sheet--product"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close */}
         <button
           className="sheet__close"
-          aria-label="Yopish"
+          aria-label="×"
           onClick={onClose}
           type="button"
         >
           ×
         </button>
-
-        {/* Media */}
         <div className="product-hero">
           {img ? (
             <Img className="product-hero__img" src={img} alt={title} />
@@ -93,35 +87,38 @@ export default function ProductSheet({ open, product, onClose, onAdd }) {
           )}
           <div className="product-hero__grad" />
         </div>
-
-        {/* Body */}
         <div style={{ padding: 14, display: "grid", gap: 12 }}>
           <h2 className="product-title">{title}</h2>
-          {product?.description && (
-            <p className="product-desc">{product.description}</p>
-          )}
-
-          {/* Price + qty + total */}
+          {(() => {
+            if (!product) return null;
+            const desc =
+              lang === "ru"
+                ? product.description_ru || product.description
+                : product.description_uz || product.description;
+            return desc ? <p className="product-desc">{desc}</p> : null;
+          })()}
           <div className="price-row">
             <div className="price-left">
-              <div className="badge">Jami</div>
-              <div className="price-main">{fmt(total || price)}</div>
+              <div className="badge">{t("checkout:total")}</div>
+              <div className="price-main">{fmtMoney(total || price)}</div>
             </div>
             <div className="qty-side">
-              <div className="qty-chip" aria-label="Miqdor">
+              <div className="qty-chip" aria-label={t("product:quantity")}>
                 <button
                   className="qty-chip__btn"
                   onClick={dec}
-                  aria-label="Kamaytirish"
+                  aria-label={t("common:decrease")}
                   type="button"
                 >
                   −
                 </button>
-                <div className="qty-chip__num">{qty}</div>
+                <div className="qty-chip__num" aria-live="polite">
+                  {qty}
+                </div>
                 <button
                   className="qty-chip__btn"
                   onClick={inc}
-                  aria-label="Ko‘paytirish"
+                  aria-label={t("common:increase")}
                   type="button"
                 >
                   +
@@ -129,23 +126,19 @@ export default function ProductSheet({ open, product, onClose, onAdd }) {
               </div>
             </div>
           </div>
-
-          {/* Price line */}
           <div className="total-row">
-            <div className="total-label">Bir dona narxi</div>
-            <div className="total-value">{fmt(price)}</div>
+            <div className="total-label">{t("product:unit_price")}</div>
+            <div className="total-value">{fmtMoney(price)}</div>
           </div>
-
-          {/* Primary action */}
           <button
             className={`btn btn--primary btn--lg ${qty > 0 ? "is-pop" : ""}`}
             onClick={addToCart}
             disabled={!qty || !price}
-            aria-label="Savatchaga qo‘shish"
+            aria-label={t("common:add_to_cart")}
             style={{ width: "100%", justifySelf: "stretch" }}
             type="button"
           >
-            Savatga qo‘shish — {fmt(total || price)}
+            {t("common:add_to_cart")} — {fmtMoney(total || price)}
           </button>
         </div>
       </div>

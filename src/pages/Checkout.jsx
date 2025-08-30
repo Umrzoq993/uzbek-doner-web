@@ -4,9 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "../store/cart";
 import { useLocationStore } from "../store/location";
 import { toast } from "react-toastify";
+import { useT, useMoneyFormatter } from "../i18n/i18n";
+import { useLangStore } from "../store/lang";
 
 /* Helpers */
-const fmt = (n) => `${Number(n || 0).toLocaleString("uz-UZ")} so‘m`;
+// localized money formatting via hook (legacy fmt kept for fallback if needed)
+const legacyFmt = (n) => `${Number(n || 0).toLocaleString("uz-UZ")} so‘m`;
 const KURYER_FEE = 6900;
 const API_BASE = import.meta?.env?.VITE_API_BASE || "";
 
@@ -23,6 +26,9 @@ const prettyNine = (nine = "") => {
 };
 
 export default function Checkout() {
+  const t = useT();
+  const lang = useLangStore((s) => s.lang);
+  const fmtMoney = useMoneyFormatter();
   const nav = useNavigate();
   const { items /*, clear*/ } = useCart();
   const { place, details, setDetails } = useLocationStore();
@@ -49,12 +55,12 @@ export default function Checkout() {
   const total = Math.max(0, subtotal + KURYER_FEE);
 
   const handlePay = async () => {
-    if (!items.length) return toast?.error?.("Savat bo‘sh");
-    if (!place?.label) return toast?.error?.("Iltimos, manzil tanlang");
+    if (!items.length) return toast?.error?.(t("checkout:toast_cart_empty"));
+    if (!place?.label) return toast?.error?.(t("checkout:toast_need_address"));
 
     const phoneE164 = toE164(phone9);
     if (payMethod === "card") {
-      if (!phoneE164) return toast?.error?.("Telefon raqamini to‘liq kiriting");
+      if (!phoneE164) return toast?.error?.(t("checkout:toast_phone_required"));
 
       setLoading(true);
       try {
@@ -80,12 +86,10 @@ export default function Checkout() {
           }),
         });
         if (!res.ok) throw new Error("Payment request failed");
-        toast?.success?.("So‘rov yuborildi. To‘lovni tasdiqlang.");
+        toast?.success?.(t("checkout:toast_card_sent"));
         nav("/");
       } catch {
-        toast?.error?.(
-          "To‘lovni amalga oshirib bo‘lmadi. Keyinroq urinib ko‘ring."
-        );
+        toast?.error?.(t("checkout:toast_card_fail"));
       } finally {
         setLoading(false);
       }
@@ -97,10 +101,10 @@ export default function Checkout() {
     try {
       // TODO: naqd buyurtma API
       await new Promise((r) => setTimeout(r, 500));
-      toast?.success?.("Buyurtma qabul qilindi! Rahmat 😊");
+      toast?.success?.(t("checkout:toast_cash_success"));
       nav("/");
     } catch {
-      toast?.error?.("Buyurtmani jo‘natib bo‘lmadi.");
+      toast?.error?.(t("checkout:toast_cash_fail"));
     } finally {
       setLoading(false);
     }
@@ -113,24 +117,39 @@ export default function Checkout() {
         <div className="left">
           {/* Savat */}
           <div className="checkout-card">
-            <h3 className="checkout-card__title">Savat</h3>
+            <h3 className="checkout-card__title">{t("checkout:cart")}</h3>
             {items.length === 0 && (
-              <div className="checkout-card__muted">Savat bo‘sh</div>
+              <div className="checkout-card__muted">
+                {t("checkout:cart_empty")}
+              </div>
             )}
             <div className="summary-list">
               {items.map((it) => {
                 const line = (it.price || 0) * (it.qty || 0);
+                // Mahsulot nomini tilga qarab tanlaymiz (raw obyekt mavjud bo'lsa undan olamiz)
+                const raw = it.raw || it.product || {};
+                const name =
+                  lang === "ru"
+                    ? raw.name_ru ||
+                      raw.name ||
+                      it.title ||
+                      it.name ||
+                      "Mahсulot"
+                    : raw.name_uz ||
+                      raw.name ||
+                      it.title ||
+                      it.name ||
+                      "Mahsulot";
                 return (
                   <div key={it.id} className="summary-row">
                     <div>
-                      <div style={{ fontWeight: 800 }}>
-                        {it.title || it.name || "Mahsulot"}
-                      </div>
+                      <div style={{ fontWeight: 800 }}>{name}</div>
                       <small className="checkout-card__muted">
-                        {fmt(it.price || 0)} • {it.qty || 0} dona
+                        {fmtMoney(it.price || 0)} • {it.qty || 0}{" "}
+                        {t("common:piece_suffix")}
                       </small>
                     </div>
-                    <div style={{ fontWeight: 700 }}>{fmt(line)}</div>
+                    <div style={{ fontWeight: 700 }}>{fmtMoney(line)}</div>
                   </div>
                 );
               })}
@@ -139,11 +158,13 @@ export default function Checkout() {
 
           {/* Restoran uchun izoh */}
           <div className="checkout-card">
-            <h3 className="checkout-card__title">Restoran uchun izoh</h3>
+            <h3 className="checkout-card__title">
+              {t("checkout:note_for_restaurant")}
+            </h3>
             <textarea
               className="field field--long"
               style={{ width: "100%" }}
-              placeholder="Izohda xullas"
+              placeholder={t("checkout:note_placeholder")}
               value={details?.courierNote || ""}
               onChange={(e) => setDetails({ courierNote: e.target.value })}
             />
@@ -151,33 +172,33 @@ export default function Checkout() {
 
           {/* Manzil */}
           <div className="checkout-card">
-            <h3 className="checkout-card__title">Manzil</h3>
+            <h3 className="checkout-card__title">{t("checkout:address")}</h3>
             <div className="checkout-card__muted" style={{ marginBottom: 10 }}>
-              {place?.label || "Manzil tanlanmagan"}
+              {place?.label || t("checkout:address_not_selected")}
             </div>
             <div className="field-row">
               <input
                 className="field"
-                placeholder="Pod’ezd"
+                placeholder={t("checkout:entrance")}
                 value={details?.entrance || ""}
                 onChange={(e) => setDetails({ entrance: e.target.value })}
               />
               <input
                 className="field"
-                placeholder="Qavat"
+                placeholder={t("checkout:floor")}
                 value={details?.floor || ""}
                 onChange={(e) => setDetails({ floor: e.target.value })}
               />
               <input
                 className="field"
-                placeholder="Kv/Ofis"
+                placeholder={t("checkout:apt")}
                 value={details?.apt || ""}
                 onChange={(e) => setDetails({ apt: e.target.value })}
               />
               <textarea
                 className="field field--long"
                 style={{ width: "100%" }}
-                placeholder="Kuryer uchun izoh"
+                placeholder={t("checkout:courier_note")}
                 value={details?.courierNote || ""}
                 onChange={(e) => setDetails({ courierNote: e.target.value })}
               />
@@ -186,7 +207,7 @@ export default function Checkout() {
 
           {/* To'lov usuli */}
           <div className="checkout-card">
-            <h3 className="checkout-card__title">To‘lov usuli</h3>
+            <h3 className="checkout-card__title">{t("checkout:pay_method")}</h3>
 
             <div className="paytype">
               <button
@@ -202,13 +223,13 @@ export default function Checkout() {
                     className="radio-card__title"
                     style={{ color: "inherit" }}
                   >
-                    Karta orqali
+                    {t("checkout:pay_card")}
                   </div>
                   <div
                     className="radio-card__sub"
                     style={{ color: "inherit", opacity: 0.75 }}
                   >
-                    Uzcard, Humo, Visa, MasterCard
+                    {t("checkout:pay_card_sub")}
                   </div>
                 </div>
               </button>
@@ -226,13 +247,13 @@ export default function Checkout() {
                     className="radio-card__title"
                     style={{ color: "inherit" }}
                   >
-                    Naqd to‘lov
+                    {t("checkout:pay_cash")}
                   </div>
                   <div
                     className="radio-card__sub"
                     style={{ color: "inherit", opacity: 0.75 }}
                   >
-                    Kuryerga naqd pul orqali
+                    {t("checkout:pay_cash_sub")}
                   </div>
                 </div>
               </button>
@@ -280,8 +301,8 @@ export default function Checkout() {
 
               <small className="checkout-card__muted">
                 {payMethod === "card"
-                  ? "Karta orqali to‘lovda telefon raqami talab qilinadi."
-                  : "Naqd to‘lovda telefon ixtiyoriy."}
+                  ? t("checkout:phone_required")
+                  : t("checkout:phone_optional")}
                 &nbsp; Format: {prettyNine(phone9)}
               </small>
             </div>
@@ -294,24 +315,24 @@ export default function Checkout() {
             <div className="summary-card">
               <div className="summary-list">
                 <div className="summary-row summary-row--muted">
-                  <div>Buyurtma</div>
-                  <div>{fmt(subtotal)}</div>
+                  <div>{t("checkout:order")}</div>
+                  <div>{fmtMoney(subtotal)}</div>
                 </div>
                 <div className="summary-row summary-row--muted">
-                  <div>Kuryer xizmati</div>
-                  <div>{fmt(KURYER_FEE)}</div>
+                  <div>{t("checkout:delivery")}</div>
+                  <div>{fmtMoney(KURYER_FEE)}</div>
                 </div>
                 <div className="summary-row summary-row--total">
-                  <div>Jami</div>
-                  <div>{fmt(total)}</div>
+                  <div>{t("checkout:total")}</div>
+                  <div>{fmtMoney(total)}</div>
                 </div>
               </div>
             </div>
 
             <div className="info-card">
-              <strong>Buyurtma haqida</strong>
+              <strong>{t("checkout:about_order")}</strong>
               <div className="checkout-card__muted">
-                Mahsulotlar soni: {totalQty}
+                {t("checkout:products_count", { count: totalQty })}
               </div>
             </div>
           </div>
@@ -321,7 +342,9 @@ export default function Checkout() {
       {/* PAYBAR */}
       <div className="paybar">
         <div className="paybar__inner">
-          <div style={{ fontWeight: 800 }}>Jami:&nbsp; {fmt(total)}</div>
+          <div style={{ fontWeight: 800 }}>
+            {t("checkout:total")}:&nbsp; {fmtMoney(total)}
+          </div>
           <button
             className="paybar__btn"
             disabled={
@@ -331,7 +354,7 @@ export default function Checkout() {
             }
             onClick={handlePay}
           >
-            {loading ? "Yuborilmoqda..." : "To‘lash"}
+            {loading ? t("checkout:submitting") : t("checkout:submit")}
           </button>
         </div>
       </div>

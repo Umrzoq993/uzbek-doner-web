@@ -1,5 +1,7 @@
 import { useCart } from "../store/cart";
 import Button from "./ui/Button";
+import { useT, useMoneyFormatter } from "../i18n/i18n";
+import { useLangStore } from "../store/lang";
 
 const FREE_LIMIT = Number(import.meta.env.VITE_FREE_DELIVERY_LIMIT || 14900);
 
@@ -8,6 +10,9 @@ export default function DeliveryBar() {
   const total = cart.total();
   const progress = Math.min(100, Math.round((total / FREE_LIMIT) * 100));
   const left = Math.max(0, FREE_LIMIT - total);
+  const t = useT();
+  const lang = useLangStore((s) => s.lang);
+  const fmtMoney = useMoneyFormatter();
 
   return (
     <div className="delivery">
@@ -17,11 +22,14 @@ export default function DeliveryBar() {
             🏃‍♂️{" "}
             {left > 0 ? (
               <b>
-                {FREE_LIMIT.toLocaleString()} so‘m uchun {left.toLocaleString()}{" "}
-                so‘m yetmaydi
+                {lang === "ru"
+                  ? `До бесплатной доставки осталось ${fmtMoney(
+                      left
+                    )} (порог ${fmtMoney(FREE_LIMIT)})`
+                  : `${fmtMoney(FREE_LIMIT)} uchun ${fmtMoney(left)} yetmaydi`}
               </b>
             ) : (
-              <b>Yetkazib berish bepul!</b>
+              <b>{t("checkout:free_delivery")}</b>
             )}
           </div>
           <div className="progress" style={{ marginTop: 8 }}>
@@ -32,7 +40,7 @@ export default function DeliveryBar() {
           className="btn--primary"
           onClick={() => location.assign("/cart")}
         >
-          Savatga o‘tish
+          {t("common:cart")}
         </Button>
       </div>
     </div>

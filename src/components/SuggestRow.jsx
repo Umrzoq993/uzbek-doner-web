@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { MenuAPI } from "../lib/api";
 import { useCart } from "../store/cart";
+import { useLangStore } from "../store/lang";
+import { useMoneyFormatter, useT } from "../i18n/i18n";
 
 const NOIMG = "/src/assets/no-image.png";
 
@@ -8,6 +10,9 @@ export default function SuggestRow({ categoryId, limit = 6 }) {
   const { add } = useCart();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const lang = useLangStore((s) => s.lang);
+  const fmtMoney = useMoneyFormatter();
+  const t = useT();
 
   // null bo‘lsa ham komponent “jim” ishlasin
   const cid = useMemo(() => categoryId ?? null, [categoryId]);
@@ -42,7 +47,9 @@ export default function SuggestRow({ categoryId, limit = 6 }) {
   return (
     <section className="suggest">
       <div className="suggest__head">
-        <h3 className="suggest__title">Nimadir esdan chiqmadimi?</h3>
+        <h3 className="suggest__title">
+          {lang === "ru" ? "Ничего не забыли?" : "Nimadir esdan chiqmadimi?"}
+        </h3>
       </div>
 
       <div className="suggest__row">
@@ -62,16 +69,18 @@ export default function SuggestRow({ categoryId, limit = 6 }) {
                   <img
                     src={p.imageUrl || NOIMG}
                     onError={(e) => (e.currentTarget.src = NOIMG)}
-                    alt={p.name}
+                    alt={
+                      lang === "ru" ? p.name_ru || p.name : p.name_uz || p.name
+                    }
                     loading="lazy"
                   />
                 </div>
                 <div className="mini-card__body">
-                  <div className="mini-card__title clamp-2">{p.name}</div>
+                  <div className="mini-card__title clamp-2">
+                    {lang === "ru" ? p.name_ru || p.name : p.name_uz || p.name}
+                  </div>
                   <div className="mini-card__foot">
-                    <div className="mini-card__price">
-                      {Number(p.price || 0).toLocaleString()} so‘m
-                    </div>
+                    <div className="mini-card__price">{fmtMoney(p.price)}</div>
                     <button
                       className="btn btn--primary"
                       onClick={() => add(p, 1, null)}

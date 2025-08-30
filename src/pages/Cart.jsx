@@ -1,14 +1,19 @@
 // src/pages/Cart.jsx
 import { useMemo } from "react";
+import { useMoneyFormatter, useT } from "../i18n/i18n";
+import { useLangStore } from "../store/lang";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../store/cart";
 import SuggestRow from "../components/SuggestRow";
 
 /* --- helpers --- */
-const fmt = (n) => `${Number(n || 0).toLocaleString("uz-UZ")} so‘m`;
+const legacyFmt = (n) => `${Number(n || 0).toLocaleString("uz-UZ")} so‘m`;
 
 export default function Cart() {
   const nav = useNavigate();
+  const t = useT();
+  const lang = useLangStore((s) => s.lang);
+  const fmtMoney = useMoneyFormatter();
   const { items, inc, dec, remove, clear } = useCart();
 
   const subtotal = useMemo(
@@ -54,7 +59,7 @@ export default function Cart() {
             }}
           >
             <h3 className="checkout-card__title" style={{ margin: 0 }}>
-              Savat
+              {t("common:cart")}
             </h3>
             {!!items.length && (
               <button
@@ -62,58 +67,66 @@ export default function Cart() {
                 onClick={clear}
                 aria-label="Savatchani tozalash"
               >
-                Tozalash
+                {lang === "ru" ? "Очистить" : "Tozalash"}
               </button>
             )}
           </div>
 
           {!items.length && (
-            <div className="checkout-card__muted">Savat bo‘sh</div>
+            <div className="checkout-card__muted">{t("common:cart_empty")}</div>
           )}
 
-          {items.map((it) => (
-            <div
-              key={it.id}
-              className="summary-row"
-              style={{ alignItems: "center" }}
-            >
-              <div>
-                <div style={{ fontWeight: 800 }}>{it.title || "Mahsulot"}</div>
-                <small className="checkout-card__muted">
-                  {fmt(it.price || 0)} • {it.qty || 0} dona
-                </small>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div className="qty-chip" aria-label={`${it.title} miqdori`}>
-                  <button
-                    className="qty-chip__btn"
-                    onClick={() => dec(it.id)}
-                    aria-label="Kamaytirish"
-                  >
-                    −
-                  </button>
-                  <div className="qty-chip__num">{it.qty || 0}</div>
-                  <button
-                    className="qty-chip__btn"
-                    onClick={() => inc(it.id)}
-                    aria-label="Ko‘paytirish"
-                  >
-                    +
-                  </button>
+          {items.map((it) => {
+            const raw = it.raw || it.product || {};
+            const name =
+              lang === "ru"
+                ? raw.name_ru || raw.name || it.title || t("product:item")
+                : raw.name_uz || raw.name || it.title || t("product:item");
+            return (
+              <div
+                key={it.id}
+                className="summary-row"
+                style={{ alignItems: "center" }}
+              >
+                <div>
+                  <div style={{ fontWeight: 800 }}>{name}</div>
+                  <small className="checkout-card__muted">
+                    {fmtMoney(it.price || 0)} • {it.qty || 0}{" "}
+                    {t("common:piece_suffix")}
+                  </small>
                 </div>
 
-                <button
-                  className="btn btn--subtle-danger"
-                  onClick={() => remove(it.id)}
-                  aria-label={`${it.title}ni o‘chirish`}
-                  title="O‘chirish"
-                >
-                  O‘chirish
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div className="qty-chip" aria-label={`${it.title} miqdori`}>
+                    <button
+                      className="qty-chip__btn"
+                      onClick={() => dec(it.id)}
+                      aria-label={t("common:decrease")}
+                    >
+                      −
+                    </button>
+                    <div className="qty-chip__num">{it.qty || 0}</div>
+                    <button
+                      className="qty-chip__btn"
+                      onClick={() => inc(it.id)}
+                      aria-label={t("common:increase")}
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <button
+                    className="btn btn--subtle-danger"
+                    onClick={() => remove(it.id)}
+                    aria-label={lang === "ru" ? "Удалить" : "O‘chirish"}
+                    title={lang === "ru" ? "Удалить" : "O‘chirish"}
+                  >
+                    {lang === "ru" ? "Удалить" : "O‘chirish"}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* SUGGESTIONS — mavjud komponentdan foydalanyapmiz */}
@@ -122,7 +135,7 @@ export default function Cart() {
         {/* “Menyuga qaytish” havolasi (ixtiyoriy) */}
         <div style={{ marginTop: 12 }}>
           <Link to="/" className="btn">
-            Menyuga qaytish
+            {lang === "ru" ? "Назад в меню" : "Menyuga qaytish"}
           </Link>
         </div>
       </div>
@@ -130,13 +143,15 @@ export default function Cart() {
       {/* PAYBAR */}
       <div className="paybar">
         <div className="paybar__inner">
-          <div style={{ fontWeight: 800 }}>Jami:&nbsp; {fmt(subtotal)}</div>
+          <div style={{ fontWeight: 800 }}>
+            {lang === "ru" ? "Итого" : "Jami"}:&nbsp; {fmtMoney(subtotal)}
+          </div>
           <button
             className="paybar__btn"
             disabled={disablePay}
             onClick={goCheckout}
           >
-            To‘lovga o‘tish
+            {lang === "ru" ? "Перейти к оплате" : "To‘lovga o‘tish"}
           </button>
         </div>
       </div>

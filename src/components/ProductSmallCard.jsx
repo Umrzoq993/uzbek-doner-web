@@ -1,5 +1,12 @@
 import Img from "./Img";
+import { useLangStore } from "../store/lang";
 export default function ProductSmallCard({ product, onAdd }) {
+  const lang = useLangStore((s) => s.lang);
+  const name =
+    lang === "ru"
+      ? product.name_ru || product.name
+      : product.name_uz || product.name;
+  const fmtMoney = useMoneyFormatter();
   return (
     <div
       style={{
@@ -12,14 +19,12 @@ export default function ProductSmallCard({ product, onAdd }) {
       }}
     >
       <div style={{ aspectRatio: "1/1", background: "var(--surface-2)" }}>
-        <Img src={product.imageUrl} alt={product.name} />
+        <Img src={product.imageUrl} alt={name} />
       </div>
       <div style={{ padding: "10px 12px" }}>
-        <div style={{ fontWeight: 800 }}>
-          {product.price.toLocaleString()} so‘m
-        </div>
+        <div style={{ fontWeight: 800 }}>{fmtMoney(product.price)}</div>
         <div style={{ color: "var(--muted)", fontSize: 13, minHeight: 38 }}>
-          {product.name}
+          {name}
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button

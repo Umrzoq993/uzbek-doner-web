@@ -2,11 +2,15 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useMemo, useEffect, useRef, useState } from "react";
 import { ShoppingCart, ChevronLeft } from "lucide-react";
 import { useCart } from "../store/cart";
+import { useT } from "../i18n/i18n";
+import { useLangStore } from "../store/lang";
 
 export default function AppHeader() {
   const { pathname } = useLocation();
   const nav = useNavigate();
   const { items } = useCart();
+  const t = useT();
+  const { lang, setLang } = useLangStore();
 
   const count = useMemo(
     () => items.reduce((s, i) => s + (i.qty || 0), 0),
@@ -30,9 +34,9 @@ export default function AppHeader() {
   useEffect(() => {
     if (prevCountRef.current !== count) {
       setBump(true);
-      const t = setTimeout(() => setBump(false), 450);
+      const timer = setTimeout(() => setBump(false), 450);
       prevCountRef.current = count;
-      return () => clearTimeout(t);
+      return () => clearTimeout(timer);
     }
   }, [count]);
 
@@ -67,18 +71,28 @@ export default function AppHeader() {
           <Link
             to="/cart"
             className="cart-ind cart-ind--lg hide-on-mobile"
-            aria-label="Savat"
+            aria-label={t("common:cart")}
           >
             <span className="cart-ind__icon">
               <ShoppingCart size={28} strokeWidth={2.25} />
             </span>
-            <span className="cart-ind__label">Savat</span>
+            <span className="cart-ind__label">{t("common:cart")}</span>
             {count > 0 && (
               <span className={`cart-ind__badge ${bump ? "is-bump" : ""}`}>
                 {count}
               </span>
             )}
           </Link>
+
+          <button
+            type="button"
+            onClick={() => setLang(lang === "uz" ? "ru" : "uz")}
+            className="chip"
+            style={{ fontSize: 12, marginLeft: 12 }}
+            aria-label="Switch language"
+          >
+            {lang === "uz" ? "RU" : "UZ"}
+          </button>
         </div>
       </header>
 
@@ -87,7 +101,7 @@ export default function AppHeader() {
         <Link
           to="/cart"
           className="cart-fab-mobile show-on-mobile"
-          aria-label="Savat"
+          aria-label={t("common:cart")}
         >
           <ShoppingCart size={26} strokeWidth={2.5} />
           {count > 0 && <span className="cart-fab-mobile__badge">{count}</span>}

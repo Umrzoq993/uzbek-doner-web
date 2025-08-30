@@ -6,12 +6,18 @@ import { useCart } from "../store/cart";
 import Button from "../components/ui/Button";
 import Img from "../components/Img";
 import heroSlides from "../data/heroSlides";
+import { useT, useMoneyFormatter } from "../i18n/i18n";
+import { useLangStore } from "../store/lang";
 
-const fmt = (n) => Number(n || 0).toLocaleString("uz-UZ") + " so‘m";
+// money formatting now localized
+// const fmt = (n) => Number(n || 0).toLocaleString("uz-UZ") + " so‘m";
 const BATCH_SIZE = 2;
 const STICKY_OFFSET = 90;
 
 export default function Home() {
+  const t = useT();
+  const lang = useLangStore((s) => s.lang);
+  const fmtMoney = useMoneyFormatter();
   const [cats, setCats] = useState([]);
   const [visibleIds, setVisibleIds] = useState([]);
   const nextIndexRef = useRef(0);
@@ -179,7 +185,19 @@ export default function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const slides = useMemo(() => heroSlides, []);
+  const slides = useMemo(
+    () =>
+      heroSlides.map((s) => ({
+        image: s.image,
+        title:
+          lang === "ru" ? s.title_ru || s.title_uz : s.title_uz || s.title_ru,
+        subtitle:
+          lang === "ru"
+            ? s.subtitle_ru || s.subtitle_uz
+            : s.subtitle_uz || s.subtitle_ru,
+      })),
+    [lang]
+  );
 
   // 🧺 Cart bilan qty sinxron (store v2: item.id = product.id)
   const qtyMap = useMemo(() => {
@@ -209,25 +227,29 @@ export default function Home() {
           style={{ position: "relative" }}
         >
           <div className="catbar__indicator" />
-          {cats.map((c) => (
-            <button
-              key={c.id}
-              ref={(el) => {
-                catBtnRefs.current[c.id] = el;
-                chipRefs.current[c.id] = el;
-              }}
-              className={`chip ${c.id === activeCatId ? "is-active" : ""}`}
-              onClick={() => scrollToSection(c.id)}
-              onPointerUp={(e) => {
-                if (e.pointerType && e.pointerType !== "mouse") {
-                  scrollToSection(c.id);
-                }
-              }}
-              title={c.name}
-            >
-              {c.name}
-            </button>
-          ))}
+          {cats.map((c) => {
+            const label =
+              lang === "ru" ? c.name_ru || c.name : c.name_uz || c.name;
+            return (
+              <button
+                key={c.id}
+                ref={(el) => {
+                  catBtnRefs.current[c.id] = el;
+                  chipRefs.current[c.id] = el;
+                }}
+                className={`chip ${c.id === activeCatId ? "is-active" : ""}`}
+                onClick={() => scrollToSection(c.id)}
+                onPointerUp={(e) => {
+                  if (e.pointerType && e.pointerType !== "mouse") {
+                    scrollToSection(c.id);
+                  }
+                }}
+                title={label}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </nav>
 
@@ -248,7 +270,9 @@ export default function Home() {
             >
               <div className="cat-section__head">
                 <h2 className="cat-section__title">
-                  {cat?.name || "Kategoriya"}
+                  {lang === "ru"
+                    ? cat?.name_ru || cat?.name || t("common:category")
+                    : cat?.name_uz || cat?.name || t("common:category")}
                 </h2>
               </div>
 
@@ -270,6 +294,7 @@ export default function Home() {
                           key={p.id}
                           product={p}
                           qty={qty}
+                          lang={lang}
                           onAdd={() => addToCart(p)}
                           onInc={() => inc(p)}
                           onDec={() => dec(p)}
@@ -302,7 +327,7 @@ export default function Home() {
         <button
           className="scrolltop"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          aria-label="Tepaga qaytish"
+          aria-label={t("common:back_to_top")}
         >
           ↑
         </button>
@@ -313,7 +338,9 @@ export default function Home() {
 
 /* --- Ichki komponentlar --- */
 
-function ProductCard({ product, qty, onAdd, onInc, onDec, onOpen }) {
+function ProductCard({ product, qty, onAdd, onInc, onDec, onOpen, lang }) {
+  const t = useT();
+  const fmtMoney = useMoneyFormatter();
   const hasQty = qty > 0;
   const numRef = useRef(null);
 
@@ -329,22 +356,33 @@ function ProductCard({ product, qty, onAdd, onInc, onDec, onOpen }) {
   return (
     <div className="card product-card" onClick={onOpen} role="button">
       <div className="product-card__media">
-        <Img src={product.imageUrl} alt={product.name} />
+        <Img
+          src={product.imageUrl}
+          alt={
+            lang === "ru"
+              ? product.name_ru || product.name
+              : product.name_uz || product.name
+          }
+        />
       </div>
 
       <div className="product-card__body">
-        <div className="product-card__title clamp-2">{product.name}</div>
+        <div className="product-card__title clamp-2">
+          {lang === "ru"
+            ? product.name_ru || product.name
+            : product.name_uz || product.name}
+        </div>
 
         <div className="product-card__footer">
           <div className="product-card__price">
-            {Number(product.price || 0).toLocaleString("uz-UZ")} so‘m
+            {fmtMoney(product.price || 0)}
           </div>
 
           {hasQty ? (
             <div className="qty-chip" onClick={(e) => e.stopPropagation()}>
               <button
                 className="qty-chip__btn"
-                aria-label="Kamaytirish"
+                aria-label={t("common:decrease")}
                 onClick={(e) => {
                   e.stopPropagation();
                   onDec();
@@ -357,7 +395,7 @@ function ProductCard({ product, qty, onAdd, onInc, onDec, onOpen }) {
               </div>
               <button
                 className="qty-chip__btn"
-                aria-label="Ko‘paytirish"
+                aria-label={t("common:increase")}
                 onClick={(e) => {
                   e.stopPropagation();
                   onInc();
@@ -374,7 +412,7 @@ function ProductCard({ product, qty, onAdd, onInc, onDec, onOpen }) {
                 onAdd();
               }}
             >
-              Qo‘shish
+              {t("common:add")}
             </Button>
           )}
         </div>

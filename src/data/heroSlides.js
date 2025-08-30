@@ -2,17 +2,25 @@
 export default [
   {
     image: "/hero/storefront.jpg",
-    title: "UzbekDoner",
-    subtitle: "Tez yetkazib berish va yangi mahsulotlar",
+    // Uzbek
+    title_uz: "UzbekDoner",
+    subtitle_uz: "Tez yetkazib berish va yangi mahsulotlar",
+    // Russian
+    title_ru: "UzbekDoner",
+    subtitle_ru: "Быстрая доставка и свежие продукты",
   },
   {
     image: "/hero/chefs.jpg",
-    title: "Har kuni yangi!",
-    subtitle: "Oshpazlarimizdan eng mazali taomlar",
+    title_uz: "Har kuni yangi!",
+    subtitle_uz: "Oshpazlarimizdan eng mazali taomlar",
+    title_ru: "Каждый день свежее!",
+    subtitle_ru: "Самые вкусные блюда от наших поваров",
   },
   {
     image: "/hero/ingredients.jpg",
-    title: "Issiq holida yetkazamiz",
-    subtitle: "Shahar bo‘ylab bepul yetkazib berish aksiyada",
+    title_uz: "Issiq holida yetkazamiz",
+    subtitle_uz: "Shahar bo‘ylab bepul yetkazib berish aksiyada",
+    title_ru: "Доставим горячим",
+    subtitle_ru: "Бесплатная доставка по городу (акция)",
   },
 ];
