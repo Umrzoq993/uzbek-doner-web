@@ -1,31 +1,45 @@
-// src/styles/_variables.scss
 :root {
-  /* Brand (cobalt) */
-  --brand: #2f6df6;
-  --brand-2: #1b55e6;
+  /* Neon blue brand */
+  --brand: #2f7df3;
+  --brand-2: #60a5fa;
+  --brand-3: #93c5fd;
 
-  /* Backgrounds (navy gradient) */
-  --bg: linear-gradient(180deg, #0a1c2f 0%, #0c2744 100%);
-  --surface: #0d2139; /* glass cards */
-  --surface-2: #0a1a2e; /* darker layer */
-  --line: rgba(150, 190, 255, 0.16);
+  /* Deep-navy fonlar (countdown uslubi) */
+  --bg: radial-gradient(
+      1200px 800px at 50% -220px,
+      rgba(47, 125, 243, 0.14),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #071c2e 0%, #0b2136 55%, #0a1b2b 100%);
 
-  /* Text */
-  --fg: #e8f1ff;
-  --text: #d8e7ff;
-  --muted: #9fb8d9;
+  /* Glassy yuzalar */
+  --surface: rgba(13, 34, 57, 0.84);
+  --surface-2: rgba(11, 31, 54, 0.66);
+  --line: rgba(255, 255, 255, 0.08);
 
-  /* Radiuses & shadows used by mixins/components */
+  /* Matnlar */
+  --fg: rgba(244, 248, 255, 0.94);
+  --muted: rgba(206, 220, 239, 0.65);
+
+  /* Soyalarga ko‘kimtir tus */
+  --shadow-1: 0 8px 26px rgba(12, 31, 54, 0.25);
+  --shadow-2: 0 18px 60px rgba(12, 31, 54, 0.42);
+  --shadow-soft: 0 10px 28px rgba(25, 69, 124, 0.25);
+  --shadow-hover: 0 18px 46px rgba(47, 125, 243, 0.22);
+
+  /* o‘lchamlar */
   --r-s: 12px;
   --r-m: 16px;
   --r-l: 22px;
-
-  /* Stronger, cool-toned shadows for glass theme */
-  --shadow-1: 0 8px 22px rgba(8, 34, 74, 0.28);
-  --shadow-2: 0 14px 40px rgba(30, 80, 200, 0.18);
-
-  /* Font sizes */
   --fs-1: clamp(18px, 1.3vw, 20px);
   --fs-2: 15px;
   --fs-3: 13px;
+
+  /* layyerlar */
+  --z-header: 1000;
+  --z-catbar: 950;
+  --z-fab: 1200;
+  --z-modal: 4000;
+
+  --paybar-h: 72px;
 }
