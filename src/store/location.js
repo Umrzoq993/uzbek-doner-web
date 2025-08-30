@@ -1,32 +1,26 @@
-// src/store/location.js
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-// Qulay default holat
 const initialState = {
-  address: "", // ko'rsatiladigan matn (manzil)
-  coords: null, // { lat: number, lng: number } yoki null
-  city: "", // ixtiyoriy
-  zoom: 15, // xarita uchun default zoom
+  address: "",
+  coords: null, // { lat, lng } | null
+  city: "",
+  zoom: 15,
 };
 
-const _impl = (set, get) => ({
+const impl = (set) => ({
   ...initialState,
-
   setAddress: (address) => set({ address }),
   setCoords: (coords) => set({ coords }),
   setCity: (city) => set({ city }),
   setZoom: (zoom) => set({ zoom }),
-
   clearLocation: () => set({ ...initialState }),
 });
 
-// Asosiy hook
 export const useLocation = create(
-  persist(_impl, {
+  persist(impl, {
     name: "uzd_loc_v1",
     storage: createJSONStorage(() => localStorage),
-    // faqat keraklilarni persist qilamiz
     partialize: (s) => ({
       address: s.address,
       coords: s.coords,
@@ -36,5 +30,5 @@ export const useLocation = create(
   })
 );
 
-// Alias — eski kodlarda `useLocationStore` nomi ishlagan bo'lsa ham ishlasin
+// ALIAS: eski kodlarda bo'lgan nomni ham qo'llab-quvvatlaymiz
 export const useLocationStore = useLocation;
