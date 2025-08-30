@@ -3,9 +3,9 @@
 @use "sass:map";
 @use "sass:meta";
 
-/* ---------------------------------
-   Breakpoints & mixins
-----------------------------------*/
+/* -----------------------------
+   Breakpoints & helpers
+------------------------------*/
 $bps: (
   sm: 480px,
   md: 768px,
@@ -14,18 +14,17 @@ $bps: (
 );
 
 @mixin up($bp) {
-  $v: if(meta.type-of($bp) ==number, $bp, map.get($bps, $bp));
-  @media (min-width: $v) {
+  $val: if(meta.type-of($bp) == number, $bp, map.get($bps, $bp));
+  @media (min-width: $val) {
     @content;
   }
 }
 @mixin down($bp) {
-  $v: if(meta.type-of($bp) ==number, $bp, map.get($bps, $bp));
-  @media (max-width: $v) {
+  $val: if(meta.type-of($bp) == number, $bp, map.get($bps, $bp));
+  @media (max-width: $val) {
     @content;
   }
 }
-
 @mixin container {
   width: min(1200px, 94vw);
   margin: 0 auto;
@@ -61,37 +60,49 @@ $bps: (
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   &:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-2);
+    box-shadow: var(--shadow-hover);
   }
 }
+@mixin shimmer-bg {
+  background: linear-gradient(90deg, #1b2c44 0%, #233652 50%, #1b2c44 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
 
-/* ---------------------------------
+/* -----------------------------
    Base
-----------------------------------*/
+------------------------------*/
 html,
 body,
 #root {
   height: 100%;
 }
 body {
-  /* deep night gradient, countdown-like */
   background: radial-gradient(
-      900px 600px at 50% -100px,
-      #12385f44,
-      transparent 65%
+      1200px 700px at 50% -200px,
+      rgba(30, 70, 160, 0.15),
+      transparent 60%
     ),
-    radial-gradient(1200px 800px at 50% 120%, #0c2c4f33, transparent 60%),
-    linear-gradient(180deg, var(--bg), var(--bg-2));
+    radial-gradient(
+      800px 500px at 0% 100%,
+      rgba(40, 90, 180, 0.12),
+      transparent 52%
+    ),
+    radial-gradient(
+      900px 600px at 100% 100%,
+      rgba(15, 140, 220, 0.1),
+      transparent 55%
+    ),
+    var(--bg);
   color: var(--fg);
   font: var(--fs-2) / 1.5 Inter, ui-sans-serif, system-ui, -apple-system,
     Segoe UI, Roboto, sans-serif;
 }
-
 .container {
   @include container;
 }
 
-/* page spacing: desktop has fixed header */
+/* Page paddings (desktop header fixed) */
 .page {
   padding: 14px 0 120px;
   @include up(md) {
@@ -107,47 +118,74 @@ body {
   );
 }
 
-/* ---------------------------------
-   Header
-----------------------------------*/
+/* -----------------------------
+   Header (mobile: static, desktop: fixed)
+------------------------------*/
 .header {
-  position: static; /* mobile: not pinned */
+  position: static;
   @include container;
   margin-bottom: var(--header-gap);
   border-radius: 999px;
   @include card-surface(999px);
-  background: color-mix(in oklab, var(--surface) 92%, transparent);
-  border-color: color-mix(in oklab, #ffffff 10%, var(--line));
   backdrop-filter: saturate(140%) blur(8px);
   -webkit-backdrop-filter: saturate(140%) blur(8px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  background: rgba(15, 32, 51, 0.75);
+  border-color: var(--line);
+  box-shadow: var(--shadow-soft);
 
   &__inner {
     padding: 10px 14px;
-    min-height: var(--header-h);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    min-height: var(--header-h);
   }
 
-  /* desktop: fixed centered */
+  /* desktop: fixed bubble centered */
   @include up(md) {
     position: fixed;
+    top: env(safe-area-inset-top, 0px);
     left: 50%;
     transform: translateX(-50%);
-    top: env(safe-area-inset-top, 0px);
     width: min(1200px, 94vw);
     z-index: var(--z-header);
   }
 }
+
+/* Mobile Back button in header */
+.header__back {
+  display: none;
+  @include down(md) {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin-right: 6px;
+    border-radius: 999px;
+    border: 1px solid rgba(173, 197, 255, 0.24);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e6efff;
+    cursor: pointer;
+    transition: background 0.18s ease, transform 0.12s ease,
+      box-shadow 0.18s ease;
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    }
+    &:active {
+      transform: translateY(1px);
+    }
+  }
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 8px;
-  background: transparent;
   border: 0;
+  background: transparent;
+  padding: 6px 8px;
   cursor: pointer;
 }
 .brand__logo {
@@ -156,12 +194,13 @@ body {
   display: block;
   object-fit: contain;
 }
-@include up(md) {
+@media (min-width: 768px) {
   .brand__logo {
     height: 40px;
   }
 }
 
+/* Show/hide helpers */
 .hide-on-mobile {
   @include down(md) {
     display: none !important;
@@ -173,15 +212,14 @@ body {
   }
 }
 
-/* header cart chip */
+/* Header cart chip */
 .cart-ind {
   position: relative;
   display: inline-flex;
   gap: 8px;
   align-items: center;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--line);
+  background: var(--surface-2);
   border-radius: 9999px;
   transition: box-shadow 0.18s ease, transform 0.12s ease;
   &__icon {
@@ -189,8 +227,7 @@ body {
     display: inline-flex;
   }
   &__label {
-    font-weight: 700;
-    color: var(--fg);
+    font-weight: 600;
   }
   &__badge {
     position: absolute;
@@ -198,13 +235,12 @@ body {
     right: -6px;
     background: var(--brand);
     color: #fff;
-    border-radius: 999px;
+    border-radius: 9999px;
     font-size: 12px;
     padding: 2px 6px;
-    box-shadow: 0 8px 22px rgba(59, 130, 246, 0.35);
   }
   &:hover {
-    box-shadow: var(--shadow-2);
+    box-shadow: var(--shadow-soft);
   }
   &:active {
     transform: translateY(1px);
@@ -218,13 +254,13 @@ body {
   }
   .cart-ind__label {
     font-size: 15px;
-    font-weight: 800;
+    font-weight: 700;
   }
 }
 
-/* ---------------------------------
+/* -----------------------------
    Hero
-----------------------------------*/
+------------------------------*/
 @keyframes kenburns {
   from {
     transform: scale(1.04);
@@ -239,7 +275,7 @@ body {
   margin: 12px auto 18px;
   border-radius: 24px;
   overflow: hidden;
-  background: linear-gradient(135deg, #1a3a62, #102742);
+  background: linear-gradient(135deg, #1f3b6b, #162b4b);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-2);
   &__track {
@@ -267,8 +303,8 @@ body {
     inset: 0;
     background: linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0.08) 0%,
-      rgba(0, 0, 0, 0.45) 85%
+      rgba(0, 0, 0, 0.05) 0%,
+      rgba(0, 0, 0, 0.35) 85%
     );
     pointer-events: none;
   }
@@ -280,7 +316,7 @@ body {
     display: grid;
     gap: 8px;
     color: #fff;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
   }
   &__title {
     font-weight: 900;
@@ -305,7 +341,7 @@ body {
     display: grid;
     place-items: center;
     backdrop-filter: blur(4px);
-    box-shadow: var(--shadow-1);
+    box-shadow: var(--shadow-soft);
     &--left {
       left: 10px;
     }
@@ -344,11 +380,53 @@ body {
   }
 }
 
-/* ---------------------------------
+/* qty/badge animations */
+@keyframes qty-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes badge-bump {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    transform: translateY(-3px) scale(1.08);
+  }
+  60% {
+    transform: translateY(0) scale(0.98);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes badge-shake {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
+  75% {
+    transform: rotate(-4deg);
+  }
+}
+
+/* -----------------------------
    Tabs
-----------------------------------*/
+------------------------------*/
 .tabs {
-  @include sticky(76px, var(--z-catbar));
+  @include sticky(76px, 45);
   @include container;
   margin: 10px auto 14px;
   padding: 6px;
@@ -356,38 +434,25 @@ body {
   gap: 8px;
   overflow: auto;
   @include card-surface(9999px);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--surface) 88%, transparent),
-    color-mix(in oklab, var(--surface) 96%, transparent)
-  );
 }
+
 .tab {
   flex: 0 0 auto;
   white-space: nowrap;
   padding: 10px 14px;
   border-radius: 9999px;
-  border: 1px solid color-mix(in oklab, #fff 8%, var(--line));
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--fg);
+  border: 1px solid transparent;
+  background: transparent;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.18s ease, background 0.18s ease,
-    color 0.18s ease;
-  &:hover {
-    box-shadow: var(--shadow-1);
-    transform: translateY(-1px);
-  }
   &.is-active {
     @include gradient-brand;
     color: #fff;
-    border-color: transparent;
-    box-shadow: 0 12px 30px rgba(59, 130, 246, 0.35);
   }
 }
 
-/* ---------------------------------
-   Grid & Cards
-----------------------------------*/
+/* -----------------------------
+   Grid & Card
+------------------------------*/
 .grid {
   display: grid;
   gap: 18px;
@@ -405,6 +470,9 @@ body {
   @include hover-lift;
 }
 
+/* -----------------------------
+   Product Card
+------------------------------*/
 .product-card {
   @extend .card;
   padding: 0;
@@ -444,6 +512,7 @@ body {
   &__desc {
     color: var(--muted);
     font-size: var(--fs-3);
+    min-height: calc(1.25em * 2 + 2px);
   }
   &__footer {
     display: grid;
@@ -460,11 +529,12 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  min-height: calc(1.2em * 2 + 2px);
 }
 
-/* ---------------------------------
+/* -----------------------------
    Buttons
-----------------------------------*/
+------------------------------*/
 .btn {
   border: 0;
   border-radius: 9999px;
@@ -477,9 +547,8 @@ body {
   &--primary {
     @include gradient-brand;
     color: #fff;
-    box-shadow: 0 12px 28px rgba(59, 130, 246, 0.35);
     &:hover {
-      box-shadow: 0 18px 36px rgba(59, 130, 246, 0.45);
+      box-shadow: 0 10px 22px rgba(124, 58, 237, 0.25);
     }
   }
   &:active {
@@ -488,12 +557,12 @@ body {
 }
 .btn--primary.is-pop {
   transform: scale(1.06);
-  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.45);
+  box-shadow: 0 16px 28px rgba(124, 58, 237, 0.28);
 }
 
-/* ---------------------------------
-   Modal (bottom sheet style on desktop too)
-----------------------------------*/
+/* -----------------------------
+   Modal / Sheet
+------------------------------*/
 @keyframes su {
   from {
     transform: translateY(12px);
@@ -507,7 +576,7 @@ body {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(6, 14, 26, 0.6);
+  background: rgba(2, 10, 20, 0.62);
   display: grid;
   place-items: end center;
   z-index: var(--z-modal);
@@ -522,20 +591,16 @@ body {
   border-top-right-radius: 24px;
   overflow: auto;
   animation: su 0.26s ease;
-  box-shadow: var(--shadow-3);
-  position: relative;
   z-index: calc(var(--z-modal) + 1);
+  position: relative;
   &--product {
     max-width: min(900px, 96vw);
+    position: relative;
   }
   &__head {
     position: sticky;
     top: 0;
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--surface) 96%, transparent),
-      var(--surface)
-    );
+    background: var(--surface);
     border-bottom: 1px solid var(--line);
     display: flex;
     gap: 10px;
@@ -549,13 +614,11 @@ body {
     right: 10px;
     top: 10px;
     z-index: 2;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 999px;
     border: 0;
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--fg);
-    backdrop-filter: blur(6px);
+    background: var(--surface-2);
     cursor: pointer;
   }
 }
@@ -593,19 +656,20 @@ body {
   border-radius: 999px;
   font-weight: 800;
   font-size: 13px;
+  background: #ff4d4f;
   color: #fff;
   box-shadow: var(--shadow-2);
-  background: linear-gradient(135deg, #ff6363, #ff2e7a);
+  &--sale {
+    background: linear-gradient(135deg, #ff6363, #ff2e7a);
+  }
 }
-
-/* texts inside sheet */
 .product-title {
   font-weight: 900;
   font-size: 22px;
   margin: 0;
 }
 .badge {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-2);
   color: var(--fg);
   border: 1px solid var(--line);
   padding: 4px 8px;
@@ -644,7 +708,7 @@ body {
   padding: 10px 12px;
   border: 1px dashed var(--line);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-2);
 }
 .total-label {
   color: var(--muted);
@@ -658,7 +722,6 @@ body {
   display: flex;
   justify-content: flex-end;
 }
-
 @include down(640px) {
   .product-hero {
     aspect-ratio: 4/3;
@@ -668,9 +731,9 @@ body {
   }
 }
 
-/* ---------------------------------
+/* -----------------------------
    Delivery bar
-----------------------------------*/
+------------------------------*/
 .delivery {
   position: fixed;
   left: 0;
@@ -680,11 +743,10 @@ body {
   padding: 12px 14px;
   background: linear-gradient(
     180deg,
-    rgba(10, 28, 50, 0.86),
-    rgba(10, 28, 50, 0.96)
+    rgba(10, 20, 36, 0.92),
+    rgba(12, 24, 42, 0.98)
   );
   border-top: 1px solid var(--line);
-  backdrop-filter: blur(8px);
 }
 .delivery__inner {
   @include container;
@@ -696,7 +758,7 @@ body {
 .progress {
   height: 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: #0f2948;
   overflow: hidden;
   &__bar {
     height: 100%;
@@ -706,9 +768,9 @@ body {
   }
 }
 
-/* ---------------------------------
-   Catbar (sticky categories)
-----------------------------------*/
+/* -----------------------------
+   Catbar (contrast chips)
+------------------------------*/
 .catbar {
   @include sticky(env(safe-area-inset-top, 0px), var(--z-catbar));
   @include card-surface(999px);
@@ -716,11 +778,11 @@ body {
   overflow: hidden;
   margin: 12px auto;
   padding: 6px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--surface) 90%, transparent),
-    var(--surface)
-  );
+  border-color: rgba(173, 197, 255, 0.12);
+  background: rgba(7, 18, 34, 0.55);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+
   @include up(md) {
     top: calc(
       env(safe-area-inset-top, 0px) + var(--header-h) + var(--header-gap)
@@ -745,7 +807,7 @@ body {
     height: calc(100% - 12px);
     border-radius: 999px;
     @include gradient-brand;
-    box-shadow: 0 8px 26px rgba(59, 130, 246, 0.35);
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
     transition: left 0.34s cubic-bezier(0.22, 1, 0.36, 1),
       width 0.34s cubic-bezier(0.22, 1, 0.36, 1);
     z-index: 0;
@@ -762,48 +824,54 @@ body {
   }
   &::before {
     left: 0;
-    background: linear-gradient(90deg, var(--surface), transparent);
+    background: linear-gradient(90deg, rgba(7, 18, 34, 1), transparent);
   }
   &::after {
     right: 0;
-    background: linear-gradient(270deg, var(--surface), transparent);
+    background: linear-gradient(270deg, rgba(7, 18, 34, 1), transparent);
   }
 }
+
 .chip {
   position: relative;
   z-index: 1;
-  border: 1px solid color-mix(in oklab, #fff 10%, var(--line));
-  background: rgba(255, 255, 255, 0.04);
   padding: 10px 14px;
   border-radius: 999px;
   white-space: nowrap;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   touch-action: manipulation;
+  color: var(--chip-fg);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-bd);
   transition: transform 0.12s ease, color 0.18s ease, box-shadow 0.18s ease,
-    background 0.18s ease;
+    background 0.18s ease, border-color 0.18s ease;
+
   &:hover {
-    box-shadow: var(--shadow-1);
+    color: var(--chip-fg-hover);
+    background: var(--chip-bg-hover);
+    box-shadow: 0 6px 18px rgba(16, 56, 255, 0.18);
     transform: translateY(-1px);
   }
   &:active {
     transform: translateY(1px);
   }
   &:focus-visible {
-    outline: 3px solid color-mix(in oklab, var(--brand) 45%, transparent);
+    outline: 3px solid color-mix(in oklab, var(--brand) 40%, transparent);
     outline-offset: 2px;
   }
+
   &.is-active {
+    @include gradient-brand;
     color: #fff;
-    background: linear-gradient(180deg, var(--brand), var(--brand-2));
     border-color: transparent;
-    box-shadow: 0 10px 28px rgba(59, 130, 246, 0.35);
+    box-shadow: 0 10px 22px rgba(124, 58, 237, 0.28);
   }
 }
 
-/* ---------------------------------
-   Section heads
-----------------------------------*/
+/* -----------------------------
+   Category sections
+------------------------------*/
 .cat-section__head {
   display: flex;
   align-items: center;
@@ -816,54 +884,33 @@ body {
   font-size: clamp(18px, 2.6vw, 22px);
 }
 
-/* ---------------------------------
+/* -----------------------------
    FAB & ScrollTop
-----------------------------------*/
-@keyframes heartbeat {
-  0%,
-  24%,
-  60%,
-  100% {
-    transform: scale(1);
-  }
-  12% {
-    transform: scale(1.12);
-  }
-  36% {
-    transform: scale(1.07);
-  }
-}
-.cart-fab-mobile {
-  position: fixed;
-  right: var(--fab-gap);
-  bottom: calc(
-    var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px)
-  );
-  z-index: var(--z-fab);
-  width: var(--fab-size);
-  height: var(--fab-size);
-  border-radius: 9999px;
+------------------------------*/
+.fab {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   @include gradient-brand;
   color: #fff;
-  box-shadow: 0 16px 44px rgba(59, 130, 246, 0.45);
-  animation: heartbeat 1.8s ease-in-out infinite;
-  will-change: transform;
-  &__badge {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    background: #ff4d4f;
-    color: #fff;
-    border-radius: 9999px;
-    font-weight: 800;
-    font-size: 12px;
-    padding: 2px 6px;
-    box-shadow: 0 8px 22px rgba(255, 77, 79, 0.35);
+  border-radius: 9999px;
+  border: none;
+  box-shadow: var(--shadow-2);
+  cursor: pointer;
+  font-size: 22px;
+  transition: transform 0.12s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+  &:hover {
+    box-shadow: var(--shadow-hover);
+  }
+  &:active {
+    transform: translateY(1px);
   }
 }
-/* Default (desktop) */
+
 .scrolltop {
   position: fixed;
   right: 18px;
@@ -881,7 +928,6 @@ body {
   color: #fff;
   box-shadow: var(--shadow-2);
 }
-/* Mobile: scrolltop FAB chapida */
 @include down(md) {
   .scrolltop {
     right: calc(var(--fab-gap) + var(--fab-size) + 12px);
@@ -890,20 +936,42 @@ body {
     );
   }
 }
-/* extra-narrow phones (<=380px): scrolltop FAB ostiga */
-@media (max-width: 380px) {
-  .scrolltop {
-    right: var(--fab-gap);
-    bottom: calc(
-      var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px) +
-        var(--fab-size) + 12px
-    );
+
+/* Floating Back FAB (for deep pages like Cart) */
+.back-fab {
+  display: none;
+}
+.page[data-has-back="true"] .back-fab {
+  position: fixed;
+  left: var(--fab-gap);
+  bottom: calc(
+    var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px)
+  );
+  z-index: var(--z-fab);
+  width: var(--fab-size);
+  height: var(--fab-size);
+  border: 0;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  color: #fff;
+  @include gradient-brand;
+  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.28);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+  &:hover {
+    box-shadow: var(--shadow-hover);
+  }
+  &:active {
+    transform: translateY(1px);
   }
 }
 
-/* ---------------------------------
-   Metrics
-----------------------------------*/
+/* -----------------------------
+   Metrics, toast, footer, suggest, mini-card
+   (unchanged except colors fit dark theme)
+------------------------------*/
 .metrics {
   display: flex;
   justify-content: center;
@@ -917,8 +985,7 @@ body {
   align-items: center;
   gap: 6px;
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--line);
+  background: var(--surface-2);
   border-radius: 16px;
   &__cap {
     color: var(--muted);
@@ -926,9 +993,6 @@ body {
   }
 }
 
-/* ---------------------------------
-   Toastify
-----------------------------------*/
 .Toastify__toast {
   border: 1px solid var(--line);
   background: var(--surface);
@@ -940,20 +1004,17 @@ body {
   border-color: rgba(255, 120, 120, 0.35);
 }
 .Toastify__toast--success {
-  border-color: rgba(59, 130, 246, 0.35);
+  border-color: rgba(108, 56, 255, 0.35);
 }
 .Toastify__progress-bar {
   background: var(--brand);
 }
 
-/* ---------------------------------
-   Footer
-----------------------------------*/
 .footer {
   margin-top: 28px;
   background: color-mix(in oklab, var(--surface) 96%, transparent);
-  border-top: 1px solid color-mix(in oklab, var(--line) 70%, transparent);
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
   position: relative;
   z-index: 1;
   &__grid {
@@ -993,7 +1054,7 @@ body {
 }
 .subfooter {
   border-top: 1px dashed var(--line);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-2);
 }
 .subfooter__inner {
   display: flex;
@@ -1027,9 +1088,6 @@ body {
   }
 }
 
-/* ---------------------------------
-   Suggest
-----------------------------------*/
 .suggest {
   margin-top: 16px;
   &__head {
@@ -1056,17 +1114,14 @@ body {
   }
 }
 
-/* ---------------------------------
-   Mini-card
-----------------------------------*/
 .mini-card {
   @include card-surface(14px);
   overflow: hidden;
   display: grid;
   grid-template-rows: auto 1fr;
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--shadow-soft);
   &:hover {
-    box-shadow: var(--shadow-2);
+    box-shadow: var(--shadow-hover);
   }
   &__media {
     aspect-ratio: 4/3;
@@ -1099,15 +1154,11 @@ body {
     font-weight: 900;
   }
   &.is-skeleton &__media {
-    background: linear-gradient(90deg, #132d4d 0%, #1a3c63 50%, #132d4d 100%);
-    background-size: 200% 100%;
-    animation: shimmer 1.2s infinite;
+    @include shimmer-bg;
   }
 }
 
-/* ---------------------------------
-   Utilities & skeleton
-----------------------------------*/
+/* utilities */
 .center {
   display: grid;
   place-items: center;
@@ -1128,8 +1179,9 @@ body {
   display: none !important;
 }
 
+/* qty inline */
 .qty-chip {
-  @include pill(rgba(255, 255, 255, 0.06), var(--line));
+  @include pill();
   display: grid;
   grid-template-columns: 36px 1fr 36px;
   align-items: center;
@@ -1151,7 +1203,7 @@ body {
     cursor: pointer;
     transition: background 0.18s ease, transform 0.12s ease;
     &:hover {
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.04);
     }
     &:active {
       transform: translateY(1px);
@@ -1166,6 +1218,9 @@ body {
     font-weight: 900;
     font-size: 14px;
     user-select: none;
+    &.is-pop {
+      animation: qty-pop 220ms ease-out;
+    }
   }
   @media (max-width: 420px) {
     grid-template-columns: 32px 1fr 32px;
@@ -1177,13 +1232,20 @@ body {
   }
 }
 
+/* shimmer + a11y */
 @keyframes shimmer {
   to {
     background-position: 200% 0;
   }
 }
-
-/* Accessibility */
+.skeleton {
+  @include shimmer-bg;
+}
+.skeleton-line {
+  height: 10px;
+  border-radius: 8px;
+  @include shimmer-bg;
+}
 @media (prefers-reduced-motion: reduce) {
   .card,
   .product-card,
@@ -1192,8 +1254,56 @@ body {
   .chip {
     transition: none !important;
   }
-  .hero__image,
+  .hero__image {
+    animation: none !important;
+  }
   .cart-fab-mobile {
     animation: none !important;
+  }
+}
+
+/* Mobile cart FAB heartbeat (if you use it) */
+@keyframes heartbeat {
+  0%,
+  24%,
+  60%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.12);
+  }
+  36% {
+    transform: scale(1.07);
+  }
+}
+.cart-fab-mobile {
+  position: fixed;
+  right: var(--fab-gap);
+  bottom: calc(
+    var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px)
+  );
+  z-index: var(--z-fab);
+  width: var(--fab-size);
+  height: var(--fab-size);
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  @include gradient-brand;
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.28);
+  animation: heartbeat 1.8s ease-in-out infinite;
+  will-change: transform;
+  &__badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ff4d4f;
+    color: #fff;
+    border-radius: 9999px;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 2px 6px;
+    box-shadow: 0 6px 16px rgba(255, 77, 79, 0.35);
   }
 }

@@ -1,36 +1,36 @@
 :root {
   /* Brand */
-  --brand: #3b82f6; /* primary (tailwind-ish blue-500) */
-  --brand-2: #2563eb; /* darker stop for gradient */
+  --brand: #6c38ff;
+  --brand-2: #8b5cff;
 
-  /* Dark theme core */
-  --bg: #081a2b; /* page bg base */
-  --bg-2: #0a2037; /* deep bg */
-  --surface: #0f2742; /* cards/modals */
-  --surface-2: #0c2239; /* chips/inputs */
-  --line: rgba(255, 255, 255, 0.08); /* subtle borders */
+  /* Surfaces (dark-blue aurora) */
+  --bg: #0b1b2b;
+  --surface: #0f2033;
+  --surface-2: #0b1626;
+  --line: rgba(173, 197, 255, 0.12);
 
   /* Text */
-  --fg: #e8f0ff;
-  --muted: #a8b5c7;
+  --fg: #e8f1ff;
+  --muted: #9fb1cc;
 
   /* Radii & shadows */
   --r-s: 12px;
   --r-m: 16px;
   --r-l: 22px;
-  --shadow-1: 0 6px 18px rgba(3, 12, 24, 0.25);
-  --shadow-2: 0 18px 60px rgba(3, 12, 24, 0.45);
-  --shadow-3: 0 28px 80px rgba(2, 10, 22, 0.55); /* modal */
+  --shadow-1: 0 6px 18px rgba(3, 18, 40, 0.22);
+  --shadow-2: 0 16px 48px rgba(3, 18, 40, 0.35);
+  --shadow-soft: 0 10px 22px rgba(3, 18, 40, 0.28);
+  --shadow-hover: 0 18px 36px rgba(3, 18, 40, 0.42);
 
-  /* Type scale */
-  --fs-1: clamp(18px, 1.35vw, 20px);
+  /* Font sizes */
+  --fs-1: clamp(18px, 1.3vw, 20px);
   --fs-2: 15px;
   --fs-3: 13px;
 
-  /* UI sizes */
+  /* Layout const */
   --paybar-h: 72px;
-  --header-h: 68px;
-  --header-gap: 12px;
+  --header-h: 64px;
+  --header-gap: 10px;
 
   /* Layers */
   --z-header: 1000;
@@ -38,25 +38,20 @@
   --z-fab: 1200;
   --z-modal: 4000;
 
-  /* FAB */
+  /* FAB placement */
   --fab-size: 56px;
   --fab-gap: 18px;
+
+  /* Catbar chips (contrast) */
+  --chip-fg: #cfe1ff;
+  --chip-fg-hover: #e6efff;
+  --chip-bg: rgba(255, 255, 255, 0.06);
+  --chip-bg-hover: rgba(255, 255, 255, 0.1);
+  --chip-bd: rgba(173, 197, 255, 0.22);
 }
 
-/* Optional light scheme fallback (if kerak bo‘lsa, o‘chirib qo‘yishingiz mumkin) */
-@media (prefers-color-scheme: light) {
+@media (min-width: 768px) {
   :root {
-    --bg: #f7f8fb;
-    --bg-2: #eef2f8;
-    --surface: #fff;
-    --surface-2: #f2f3f7;
-    --line: rgba(18, 20, 30, 0.08);
-
-    --fg: #14161a;
-    --muted: #667084;
-
-    --shadow-1: 0 6px 18px rgba(17, 21, 33, 0.08);
-    --shadow-2: 0 16px 48px rgba(17, 21, 33, 0.12);
-    --shadow-3: 0 24px 60px rgba(17, 21, 33, 0.18);
+    --header-h: 70px;
   }
 }
