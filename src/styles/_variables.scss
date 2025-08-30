@@ -1,20 +1,30 @@
+// src/styles/_variables.scss
 :root {
-  --brand: #6c38ff;
-  --brand-2: #8b5cff;
-  --bg: #f7f8fb;
-  --surface: #fff;
-  --surface-2: #f2f3f7;
-  --line: rgba(18, 20, 30, 0.08);
+  /* Brand (cobalt) */
+  --brand: #2f6df6;
+  --brand-2: #1b55e6;
 
-  --fg: #14161a;
-  --muted: #757f8b;
+  /* Backgrounds (navy gradient) */
+  --bg: linear-gradient(180deg, #0a1c2f 0%, #0c2744 100%);
+  --surface: #0d2139; /* glass cards */
+  --surface-2: #0a1a2e; /* darker layer */
+  --line: rgba(150, 190, 255, 0.16);
 
+  /* Text */
+  --fg: #e8f1ff;
+  --text: #d8e7ff;
+  --muted: #9fb8d9;
+
+  /* Radiuses & shadows used by mixins/components */
   --r-s: 12px;
   --r-m: 16px;
   --r-l: 22px;
-  --shadow-1: 0 6px 18px rgba(17, 21, 33, 0.08);
-  --shadow-2: 0 16px 48px rgba(17, 21, 33, 0.12);
 
+  /* Stronger, cool-toned shadows for glass theme */
+  --shadow-1: 0 8px 22px rgba(8, 34, 74, 0.28);
+  --shadow-2: 0 14px 40px rgba(30, 80, 200, 0.18);
+
+  /* Font sizes */
   --fs-1: clamp(18px, 1.3vw, 20px);
   --fs-2: 15px;
   --fs-3: 13px;

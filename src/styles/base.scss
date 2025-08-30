@@ -1,3 +1,4 @@
+// src/styles/base.scss
 @use "./_variables.scss";
 @use "./_reset.scss";
 @use "sass:map";
@@ -36,11 +37,19 @@ $bps: (
   top: $top;
   z-index: $z;
 }
+/* Glassy surface */
 @mixin card-surface($r: 20px) {
-  background: var(--surface);
+  background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0.02)
+    ),
+    var(--surface);
   border: 1px solid var(--line);
   border-radius: $r;
   box-shadow: var(--shadow-1);
+  backdrop-filter: saturate(140%) blur(8px);
+  -webkit-backdrop-filter: saturate(140%) blur(8px);
 }
 @mixin pill($bg: var(--surface-2), $bd: var(--line)) {
   border: 1px solid $bd;
@@ -71,20 +80,23 @@ $bps: (
   animation: shimmer 1.2s infinite;
 }
 
-/* tokens */
+/* tokens (layout-only) */
 :root {
   --r-s: 12px;
   --r-m: 16px;
   --r-l: 20px;
-  --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.08);
-  --shadow-hover: 0 10px 28px rgba(0, 0, 0, 0.12);
+
+  /* ko‘k temaga mos soyalar */
+  --shadow-soft: 0 10px 28px rgba(10, 30, 70, 0.2);
+  --shadow-hover: 0 14px 36px rgba(24, 64, 180, 0.28);
+
   --paybar-h: 72px;
 
   /* layers */
   --z-header: 1000;
   --z-catbar: 950;
   --z-fab: 1200;
-  --z-modal: 4000; /* NEW: modal har doim ustida */
+  --z-modal: 4000;
 
   /* sizes */
   --header-h: 64px; /* desktop fallback */
@@ -111,7 +123,7 @@ body,
 body {
   background: radial-gradient(
       1200px 700px at 50% -200px,
-      #eef0ff,
+      rgba(220, 235, 255, 0.25),
       transparent 60%
     ),
     var(--bg);
@@ -143,14 +155,11 @@ body {
    Header (mobile: static; desktop: fixed)
 ------------------------------*/
 .header {
-  /* mobile: static bubble */
   position: static;
   @include container;
   margin-bottom: var(--header-gap);
   border-radius: 999px;
   @include card-surface(999px);
-  backdrop-filter: saturate(140%) blur(8px);
-  -webkit-backdrop-filter: saturate(140%) blur(8px);
   background: color-mix(in oklab, var(--surface) 88%, transparent);
   border-color: color-mix(in oklab, var(--line) 70%, transparent);
   box-shadow: var(--shadow-soft);
@@ -164,7 +173,6 @@ body {
     min-height: var(--header-h);
   }
 
-  /* desktop: fixed center */
   @include up(md) {
     position: fixed;
     top: env(safe-area-inset-top, 0px);
@@ -270,7 +278,7 @@ body {
   margin: 12px auto 18px;
   border-radius: 24px;
   overflow: hidden;
-  background: linear-gradient(135deg, #ffe08a, #ffb1b1);
+  background: linear-gradient(135deg, #0e2340 0%, #16345a 100%);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-2);
 
@@ -548,7 +556,7 @@ body {
     @include gradient-brand;
     color: #fff;
     &:hover {
-      box-shadow: 0 10px 22px rgba(124, 58, 237, 0.25);
+      box-shadow: 0 10px 22px rgba(47, 109, 246, 0.25);
     }
   }
   &:active {
@@ -557,7 +565,7 @@ body {
 }
 .btn--primary.is-pop {
   transform: scale(1.06);
-  box-shadow: 0 16px 28px rgba(124, 58, 237, 0.28);
+  box-shadow: 0 16px 28px rgba(47, 109, 246, 0.32);
 }
 
 /* -----------------------------
@@ -744,8 +752,8 @@ body {
   padding: 12px 14px;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.92),
-    rgba(255, 255, 255, 0.98)
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02)
   );
   border-top: 1px solid var(--line);
 }
@@ -759,7 +767,7 @@ body {
 .progress {
   height: 6px;
   border-radius: 999px;
-  background: #eceef3;
+  background: rgba(180, 200, 255, 0.1);
   overflow: hidden;
   &__bar {
     height: 100%;
@@ -773,7 +781,6 @@ body {
    Catbar (mobile: top; desktop: header ostida)
 ------------------------------*/
 .catbar {
-  /* MOBILE: eng tepaga yopishsin */
   @include sticky(env(safe-area-inset-top, 0px), var(--z-catbar));
   @include card-surface(999px);
   @include container;
@@ -781,7 +788,6 @@ body {
   margin: 12px auto;
   padding: 6px;
 
-  /* DESKTOP: header + gap ostida pin */
   @include up(md) {
     top: calc(
       env(safe-area-inset-top, 0px) + var(--header-h) + var(--header-gap)
@@ -807,7 +813,7 @@ body {
     height: calc(100% - 12px);
     border-radius: 999px;
     @include gradient-brand;
-    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
+    box-shadow: 0 8px 20px rgba(47, 109, 246, 0.3);
     transition: left 0.34s cubic-bezier(0.22, 1, 0.36, 1),
       width 0.34s cubic-bezier(0.22, 1, 0.36, 1);
     z-index: 0;
@@ -923,8 +929,7 @@ body {
   box-shadow: var(--shadow-2);
 }
 
-/* MOBILE: ScrollTop FAB chapida, bir xil pastki offset */
-/* Default: mobil keng ekranlarda scrolltop savatchaning CHAPida */
+/* MOBILE: ScrollTop joylashuvi */
 @include down(md) {
   .scrolltop {
     right: calc(var(--fab-gap) + var(--fab-size) + 12px);
@@ -933,8 +938,7 @@ body {
     );
   }
 }
-
-/* Juda tor ekranlar (<= 380px): scrolltop savatchaning OSTIDA */
+/* Juda tor ekranlar (<= 380px): scrolltop savatchaning ostida */
 @media (max-width: 380px) {
   .scrolltop {
     right: var(--fab-gap);
@@ -996,7 +1000,7 @@ body {
   margin-top: 28px;
   background: color-mix(in oklab, var(--surface) 96%, transparent);
   border-top: 1px solid color-mix(in oklab, var(--line) 70%, transparent);
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
   position: relative;
   z-index: 1;
 
@@ -1287,7 +1291,7 @@ body {
   place-items: center;
   @include gradient-brand;
   color: #fff;
-  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.28);
+  box-shadow: 0 10px 28px rgba(47, 109, 246, 0.32);
   animation: heartbeat 1.8s ease-in-out infinite;
   will-change: transform;
 
