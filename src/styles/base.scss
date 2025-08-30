@@ -79,15 +79,21 @@ $bps: (
   --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.08);
   --shadow-hover: 0 10px 28px rgba(0, 0, 0, 0.12);
   --paybar-h: 72px;
+
+  /* layers */
   --z-header: 1000;
   --z-catbar: 950;
-  --z-modal: 4000; /* modal hamma narsadan yuqorida */
+  --z-fab: 1200;
+  --z-modal: 4000; /* NEW: modal har doim ustida */
 
-  /* Header & CatBar pin settings */
-  --header-h: 64px; /* header minimal height fallback */
-  --header-gap: 10px; /* header bilan catbar oralig‘i */
+  /* sizes */
+  --header-h: 64px; /* desktop fallback */
+  --header-gap: 10px;
+
+  /* FAB placement */
+  --fab-size: 56px;
+  --fab-gap: 18px;
 }
-/* desktopda header biroz balandroq bo‘lishi mumkin */
 @media (min-width: 768px) {
   :root {
     --header-h: 70px;
@@ -116,9 +122,13 @@ body {
 .container {
   @include container;
 }
-/* Header fixed bo‘lgani uchun sahifani pastga bosib turamiz */
+
+/* Page paddings: mobile — oddiy; desktop — header fixed bo‘lgani uchun yuqoridan joy */
 .page {
-  padding: calc(var(--header-h) + var(--header-gap) + 14px) 0 120px;
+  padding: 14px 0 120px; /* mobile */
+  @include up(md) {
+    padding-top: calc(var(--header-h) + var(--header-gap) + 14px);
+  }
   @include down(md) {
     padding-bottom: 160px;
   }
@@ -130,17 +140,13 @@ body {
 }
 
 /* -----------------------------
-   Header (ALWAYS pinned)
+   Header (mobile: static; desktop: fixed)
 ------------------------------*/
 .header {
-  /* Fixed: har doim tepada, markazga yoyilgan container kengligida */
-  position: fixed;
-  top: env(safe-area-inset-top, 0px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(1200px, 94vw);
-  z-index: var(--z-header);
-
+  /* mobile: static bubble */
+  position: static;
+  @include container;
+  margin-bottom: var(--header-gap);
   border-radius: 999px;
   @include card-surface(999px);
   backdrop-filter: saturate(140%) blur(8px);
@@ -153,9 +159,19 @@ body {
     padding: 10px 14px;
     display: flex;
     align-items: center;
-    justify-content: space-between; /* logo chapda, savat o‘ngda */
+    justify-content: space-between;
     gap: 12px;
     min-height: var(--header-h);
+  }
+
+  /* desktop: fixed center */
+  @include up(md) {
+    position: fixed;
+    top: env(safe-area-inset-top, 0px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(1200px, 94vw);
+    z-index: var(--z-header);
   }
 }
 .brand {
@@ -179,7 +195,19 @@ body {
   }
 }
 
-/* Savat chipi (kattaroq, chiroyli) */
+/* Header ichidagi cart-ind – mobil’da ko‘rinmasin, desktop’da ko‘rinsin */
+.hide-on-mobile {
+  @include down(md) {
+    display: none !important;
+  }
+}
+.show-on-mobile {
+  @include up(md) {
+    display: none !important;
+  }
+}
+
+/* Savat chipi */
 .cart-ind {
   position: relative;
   display: inline-flex;
@@ -189,7 +217,6 @@ body {
   background: var(--surface-2);
   border-radius: 9999px;
   transition: box-shadow 0.18s ease, transform 0.12s ease;
-
   &__icon {
     display: inline-flex;
     line-height: 0;
@@ -453,7 +480,6 @@ body {
   display: grid;
   grid-template-rows: auto 1fr;
   cursor: pointer;
-
   &__media {
     aspect-ratio: 4/3;
     background: var(--surface-2);
@@ -518,7 +544,6 @@ body {
   position: relative;
   overflow: hidden;
   transition: transform 0.12s ease, box-shadow 0.18s ease, background 0.18s ease;
-
   &--primary {
     @include gradient-brand;
     color: #fff;
@@ -554,10 +579,9 @@ body {
   background: rgba(0, 0, 0, 0.36);
   display: grid;
   place-items: end center;
-  z-index: var(--z-modal); /* <<< headerdan yuqori */
+  z-index: var(--z-modal);
   padding: 14px;
 }
-
 .sheet {
   width: 100%;
   max-width: 720px;
@@ -567,14 +591,13 @@ body {
   border-top-right-radius: 24px;
   overflow: auto;
   animation: su 0.26s ease;
-  z-index: calc(var(--z-modal) + 1); /* ehtiyot uchun */
-  position: relative; /* close tugma uchun stacking context */
+  z-index: calc(var(--z-modal) + 1);
+  position: relative;
 
   &--product {
     max-width: min(900px, 96vw);
     position: relative;
   }
-
   &__head {
     position: sticky;
     top: 0;
@@ -585,14 +608,13 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 12px 14px;
-    z-index: 1; /* sarlavha tanasi ustida */
+    z-index: 1;
   }
-
   &__close {
     position: absolute;
     right: 10px;
     top: 10px;
-    z-index: 2; /* rasmdan va head’dan yuqori */
+    z-index: 2;
     width: 36px;
     height: 36px;
     border-radius: 999px;
@@ -601,7 +623,6 @@ body {
     cursor: pointer;
   }
 }
-
 .product-hero {
   position: relative;
   width: 100%;
@@ -749,20 +770,23 @@ body {
 }
 
 /* -----------------------------
-   Catbar (pinned under header)
+   Catbar (mobile: top; desktop: header ostida)
 ------------------------------*/
 .catbar {
-  /* AppHeader fixed bo‘lgani uchun CatBar top = header height + gap */
-  @include sticky(
-    calc(env(safe-area-inset-top, 0px) + var(--header-h) + var(--header-gap)),
-    950
-  );
+  /* MOBILE: eng tepaga yopishsin */
+  @include sticky(env(safe-area-inset-top, 0px), var(--z-catbar));
   @include card-surface(999px);
   @include container;
   overflow: hidden;
   margin: 12px auto;
   padding: 6px;
-  z-index: var(--z-catbar); /* headerdan pastda */
+
+  /* DESKTOP: header + gap ostida pin */
+  @include up(md) {
+    top: calc(
+      env(safe-area-inset-top, 0px) + var(--header-h) + var(--header-gap)
+    );
+  }
 
   &__inner {
     position: relative;
@@ -774,6 +798,7 @@ body {
     touch-action: pan-x;
     @include no-scrollbar;
   }
+
   &__indicator {
     position: absolute;
     left: var(--ind-x, 0);
@@ -878,6 +903,8 @@ body {
     transform: translateY(1px);
   }
 }
+
+/* ScrollTop (default desktop joylashuvi) */
 .scrolltop {
   position: fixed;
   right: 18px;
@@ -894,6 +921,28 @@ body {
   @include gradient-brand;
   color: #fff;
   box-shadow: var(--shadow-2);
+}
+
+/* MOBILE: ScrollTop FAB chapida, bir xil pastki offset */
+/* Default: mobil keng ekranlarda scrolltop savatchaning CHAPida */
+@include down(md) {
+  .scrolltop {
+    right: calc(var(--fab-gap) + var(--fab-size) + 12px);
+    bottom: calc(
+      var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
+/* Juda tor ekranlar (<= 380px): scrolltop savatchaning OSTIDA */
+@media (max-width: 380px) {
+  .scrolltop {
+    right: var(--fab-gap);
+    bottom: calc(
+      var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px) +
+        var(--fab-size) + 12px
+    );
+  }
 }
 
 /* -----------------------------
@@ -1130,7 +1179,6 @@ body {
   gap: 6px;
   height: 40px;
   padding: 0 6px;
-
   &__btn {
     width: 36px;
     height: 28px;
@@ -1165,7 +1213,6 @@ body {
       animation: qty-pop 220ms ease-out;
     }
   }
-
   @media (max-width: 420px) {
     grid-template-columns: 32px 1fr 32px;
     height: 36px;
@@ -1205,6 +1252,60 @@ body {
     transition: none !important;
   }
   .hero__image {
+    animation: none !important;
+  }
+}
+
+/* -----------------------------
+   Mobile Cart FAB (heartbeat)
+------------------------------*/
+@keyframes heartbeat {
+  0%,
+  24%,
+  60%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.12);
+  }
+  36% {
+    transform: scale(1.07);
+  }
+}
+.cart-fab-mobile {
+  position: fixed;
+  right: var(--fab-gap);
+  bottom: calc(
+    var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px)
+  );
+  z-index: var(--z-fab);
+  width: var(--fab-size);
+  height: var(--fab-size);
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  @include gradient-brand;
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.28);
+  animation: heartbeat 1.8s ease-in-out infinite;
+  will-change: transform;
+
+  &__badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ff4d4f;
+    color: #fff;
+    border-radius: 9999px;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 2px 6px;
+    box-shadow: 0 6px 16px rgba(255, 77, 79, 0.35);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cart-fab-mobile {
     animation: none !important;
   }
 }
