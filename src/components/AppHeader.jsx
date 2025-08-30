@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useMemo } from "react";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, ChevronLeft } from "lucide-react";
 import { useCart } from "../store/cart";
 
 export default function AppHeader() {
@@ -13,12 +13,34 @@ export default function AppHeader() {
     [items]
   );
 
+  // Home sahifasidan boshqa joylarda back ko‘rsatamiz
+  const showBack = useMemo(() => {
+    const path = pathname.split("?")[0];
+    return path !== "/" && path !== "";
+  }, [pathname]);
+
+  const goBack = () => {
+    if (window.history.length > 1) nav(-1);
+    else nav("/");
+  };
+
   return (
     <>
-      {/* Header: mobile’da sticky emas (SCSS’da boshqariladi), desktop’da fixed */}
+      {/* Header: mobile’da sticky emas (SCSS boshqaradi), desktop’da fixed bubble */}
       <header className="header">
         <div className="header__inner">
-          {/* chapda logotip */}
+          {/* Mobile back (faqat < md ko‘rinadi — SCSS) */}
+          {showBack && (
+            <button
+              className="header__back header__back--desktop"
+              aria-label="Orqaga"
+              onClick={goBack}
+            >
+              <ChevronLeft size={20} strokeWidth={2.5} />
+            </button>
+          )}
+
+          {/* Brend logotip — oq ko‘rinishi SCSS dagi .brand__logo bilan */}
           <button
             className="brand"
             onClick={() => nav("/")}
@@ -33,7 +55,7 @@ export default function AppHeader() {
             />
           </button>
 
-          {/* o‘ngda cart – faqat >= md ko‘rinadi (SCSS) */}
+          {/* Desktop uchun Savat chipi */}
           <Link
             to="/cart"
             className="cart-ind cart-ind--lg hide-on-mobile"
@@ -48,7 +70,7 @@ export default function AppHeader() {
         </div>
       </header>
 
-      {/* Mobil uchun pastki o‘ngda FAB (doim ko‘rinadi, faqat < md) */}
+      {/* Mobil uchun pastki o‘ngda Savat FAB */}
       <Link
         to="/cart"
         className="cart-fab-mobile show-on-mobile"
