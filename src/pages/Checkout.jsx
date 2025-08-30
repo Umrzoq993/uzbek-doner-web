@@ -8,19 +8,19 @@ import { toast } from "react-toastify";
 /* Helpers */
 const fmt = (n) => `${Number(n || 0).toLocaleString("uz-UZ")} so‘m`;
 const KURYER_FEE = 6900;
+const API_BASE = import.meta?.env?.VITE_API_BASE || "";
 
-/* Tel mask: +998 (AA)-BBB-CC-CC  -> saqlanadigan qismi: 9 ta raqam (AABBBCCCC) */
+/* Telefon: faqat 9 ta raqam saqlaymiz (prefiks +998 alohida ko‘rsatiladi) */
 const onlyDigits = (s = "") => s.replace(/\D+/g, "");
 const clamp9 = (s) => onlyDigits(s).slice(0, 9);
-const renderMasked = (nine) => {
-  const d = (i) => nine[i] ?? "_";
-  return `+998 (${d(0)}${d(1)})-${d(2)}${d(3)}${d(4)}-${d(5)}${d(6)}-${d(7)}${d(
-    8
+const toE164 = (nine) => (nine?.length === 9 ? `+998${nine}` : "");
+const prettyNine = (nine = "") => {
+  const a = nine.padEnd(9, "_");
+  return `+998 (${a.slice(0, 2)})-${a.slice(2, 5)}-${a.slice(5, 7)}-${a.slice(
+    7,
+    9
   )}`;
 };
-const toE164 = (nine) => (nine.length === 9 ? `+998${nine}` : "");
-
-const API_BASE = import.meta?.env?.VITE_API_BASE || "";
 
 export default function Checkout() {
   const nav = useNavigate();
@@ -28,16 +28,12 @@ export default function Checkout() {
   const { place, details, setDetails } = useLocationStore();
 
   const [payMethod, setPayMethod] = useState("card"); // 'card' | 'cash'
-  const [phone9, setPhone9] = useState(""); // faqat 9 ta raqam saqlanadi
+  const [phone9, setPhone9] = useState(""); // faqat 9 ta raqam
   const [loading, setLoading] = useState(false);
 
-  // Agar oldindan telefon bo'lsa (masalan, profil/saqlangan)
+  // Agar details.phone bo‘lsa, 998 prefiksini olib, 9 ta raqam sifatida qo‘yib olaylik
   useEffect(() => {
-    const preset =
-      onlyDigits(details?.phone || "").replace(
-        /^998/,
-        ""
-      ) /* 998 ni olib tashla */ || "";
+    const preset = onlyDigits(details?.phone || "").replace(/^998/, "");
     if (preset) setPhone9(clamp9(preset));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -53,21 +49,13 @@ export default function Checkout() {
   const total = Math.max(0, subtotal + KURYER_FEE);
 
   const handlePay = async () => {
-    if (!items.length) {
-      toast?.error?.("Savat bo‘sh");
-      return;
-    }
-    if (!place?.label) {
-      toast?.error?.("Iltimos, manzil tanlang");
-      return;
-    }
+    if (!items.length) return toast?.error?.("Savat bo‘sh");
+    if (!place?.label) return toast?.error?.("Iltimos, manzil tanlang");
 
     const phoneE164 = toE164(phone9);
     if (payMethod === "card") {
-      if (!phoneE164) {
-        toast?.error?.("Telefon raqamini to‘liq kiriting");
-        return;
-      }
+      if (!phoneE164) return toast?.error?.("Telefon raqamini to‘liq kiriting");
+
       setLoading(true);
       try {
         const res = await fetch(`${API_BASE}/payment/card`, {
@@ -104,7 +92,7 @@ export default function Checkout() {
       return;
     }
 
-    // Naqd to'lov
+    // Naqd to‘lov
     setLoading(true);
     try {
       // TODO: naqd buyurtma API
@@ -207,7 +195,7 @@ export default function Checkout() {
                   payMethod === "card" ? "is-active" : ""
                 }`}
                 onClick={() => setPayMethod("card")}
-                style={{ color: "var(--fg)" }} // qora bo'lib qolmasin
+                style={{ color: "var(--fg)" }}
               >
                 <div>
                   <div
@@ -250,25 +238,51 @@ export default function Checkout() {
               </button>
             </div>
 
-            {/* Telefon raqami — doim ko'rinadi, mask bilan */}
+            {/* Telefon — mask yo‘q, prefiks alohida; input faqat 9 ta raqam qabul qiladi */}
             <div className="field-row" style={{ marginTop: 12 }}>
-              <input
-                className="field"
-                style={{ width: "100%", fontVariantNumeric: "tabular-nums" }}
-                inputMode="tel"
-                aria-label="Telefon raqami"
-                placeholder="+998 (__)-___-__-__"
-                value={renderMasked(phone9)}
-                onChange={(e) => {
-                  const d = clamp9(e.target.value);
-                  setPhone9(d);
-                  setDetails({ phone: toE164(d) || "" });
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "auto 1fr",
+                  gap: 8,
+                  alignItems: "center",
+                  width: "100%",
                 }}
-              />
+              >
+                <span
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: 999,
+                    border: "1px solid var(--line)",
+                    background: "var(--surface-2)",
+                    fontWeight: 800,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  +998
+                </span>
+
+                <input
+                  className="field"
+                  style={{ width: "100%" }}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={9}
+                  placeholder="(__)___-__-__"
+                  value={phone9}
+                  onChange={(e) => {
+                    const v = clamp9(e.target.value);
+                    setPhone9(v);
+                    setDetails({ phone: toE164(v) || "" });
+                  }}
+                />
+              </div>
+
               <small className="checkout-card__muted">
                 {payMethod === "card"
                   ? "Karta orqali to‘lovda telefon raqami talab qilinadi."
                   : "Naqd to‘lovda telefon ixtiyoriy."}
+                &nbsp; Format: {prettyNine(phone9)}
               </small>
             </div>
           </div>
@@ -313,7 +327,7 @@ export default function Checkout() {
             disabled={
               !items.length ||
               loading ||
-              (payMethod === "card" && !toE164(phone9))
+              (payMethod === "card" && phone9.length !== 9)
             }
             onClick={handlePay}
           >
