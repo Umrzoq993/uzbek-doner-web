@@ -1,28 +1,40 @@
+// src/store/location.js
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
-const key = "uzd_location_v1";
-function restore() {
-  try {
-    return JSON.parse(localStorage.getItem(key)) || null;
-  } catch {
-    return null;
-  }
-}
+// Qulay default holat
+const initialState = {
+  address: "", // ko'rsatiladigan matn (manzil)
+  coords: null, // { lat: number, lng: number } yoki null
+  city: "", // ixtiyoriy
+  zoom: 15, // xarita uchun default zoom
+};
 
-export const useLocationStore = create((set, get) => ({
-  place: restore(), // {label, lat, lon, city, street, house}
-  details: { entrance: "", floor: "", apt: "", courierNote: "" },
+const _impl = (set, get) => ({
+  ...initialState,
 
-  setPlace: (place) => {
-    set({ place });
-    localStorage.setItem(key, JSON.stringify(place));
-  },
-  clearPlace: () => {
-    set({ place: null });
-    localStorage.removeItem(key);
-  },
+  setAddress: (address) => set({ address }),
+  setCoords: (coords) => set({ coords }),
+  setCity: (city) => set({ city }),
+  setZoom: (zoom) => set({ zoom }),
 
-  setDetails: (patch) => set({ details: { ...get().details, ...patch } }),
-  resetDetails: () =>
-    set({ details: { entrance: "", floor: "", apt: "", courierNote: "" } }),
-}));
+  clearLocation: () => set({ ...initialState }),
+});
+
+// Asosiy hook
+export const useLocation = create(
+  persist(_impl, {
+    name: "uzd_loc_v1",
+    storage: createJSONStorage(() => localStorage),
+    // faqat keraklilarni persist qilamiz
+    partialize: (s) => ({
+      address: s.address,
+      coords: s.coords,
+      city: s.city,
+      zoom: s.zoom,
+    }),
+  })
+);
+
+// Alias — eski kodlarda `useLocationStore` nomi ishlagan bo'lsa ham ishlasin
+export const useLocationStore = useLocation;
