@@ -1,123 +1,145 @@
-import { useState } from "react";
-import { useCart } from "../store/cart";
-import QtyStepper from "../components/QtyStepper";
-import NoteSheet from "../components/NoteSheet";
-import SuggestRow from "../components/SuggestRow";
-import PayBar from "../components/PayBar";
+// src/pages/Cart.jsx
+import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "../store/cart";
+import SuggestRow from "../components/SuggestRow";
 
-const BAG_PRODUCT = { id: "bag", name: "Paket", price: 1000, imageUrl: "" };
+/* --- helpers --- */
+const fmt = (n) => `${Number(n || 0).toLocaleString("uz-UZ")} so‘m`;
 
 export default function Cart() {
   const nav = useNavigate();
-  const { items, setQty, remove, add, total, note, setNote } = useCart();
-  const [noteOpen, setNoteOpen] = useState(false);
-  const itemsTotal = total();
-  const firstCatId = items[0]?.product?.categoryId ?? null;
+  const { items, inc, dec, remove, clear } = useCart();
 
-  const addBag = () => add(BAG_PRODUCT, 1, null);
+  const subtotal = useMemo(
+    () => items.reduce((s, it) => s + (it.price || 0) * (it.qty || 0), 0),
+    [items]
+  );
+  const totalQty = useMemo(
+    () => items.reduce((s, it) => s + (it.qty || 0), 0),
+    [items]
+  );
+  const disablePay = !items.length || totalQty <= 0 || subtotal <= 0;
+
+  // Savatdagi birinchi mavjud kategoriya (fallback: 49)
+  const suggestCategoryId = useMemo(() => {
+    for (const it of items) {
+      const cid =
+        it?.raw?.category?.category_id ??
+        it?.category?.category_id ??
+        it?.category_id ??
+        it?.raw?.category_id ??
+        null;
+      if (cid != null) return Number(cid);
+    }
+    return 49; // default Uzbek Doner
+  }, [items]);
+
+  const goCheckout = () => {
+    if (disablePay) return;
+    nav("/checkout");
+  };
 
   return (
-    <section className="page has-paybar">
+    <div className="page has-paybar">
       <div className="container">
-        <div className="card" style={{ padding: 14 }}>
-          <div style={{ fontWeight: 900, marginBottom: 10 }}>Savat</div>
-
-          {items.length === 0 && (
-            <div className="center">
-              Savatingiz bo‘sh.{" "}
-              <Link to="/" style={{ marginLeft: 6, color: "var(--brand)" }}>
-                Menyuga o‘tish →
-              </Link>
-            </div>
-          )}
-
-          {items.map((i, idx) => (
-            <div
-              key={idx}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto auto",
-                gap: 12,
-                alignItems: "center",
-                padding: "10px 0",
-                borderBottom: "1px solid var(--line)",
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 800 }}>{i.product.name}</div>
-                <div style={{ color: "var(--muted)", fontSize: 13 }}>
-                  {(i.product.price + (i.priceDelta || 0)).toLocaleString()}{" "}
-                  so‘m • {i.qty} dona
-                </div>
-              </div>
-              <QtyStepper value={i.qty} onChange={(v) => setQty(idx, v)} />
-              <button className="btn" onClick={() => remove(idx)}>
-                🗑
-              </button>
-            </div>
-          ))}
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr auto",
-              gap: 12,
-              alignItems: "center",
-              padding: "10px 0",
-            }}
-          >
-            <div>
-              <div style={{ fontWeight: 800 }}>Paket</div>
-              <div style={{ color: "var(--muted)", fontSize: 13 }}>
-                1000 so‘m
-              </div>
-            </div>
-            <button className="btn" onClick={addBag}>
-              +
-            </button>
-          </div>
-        </div>
-
-        <div className="card" style={{ padding: 14, marginTop: 16 }}>
+        {/* SAVAT */}
+        <div className="checkout-card">
           <div
             style={{
               display: "flex",
-              alignItems: "center",
               justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
             }}
           >
-            <div>
-              <div style={{ fontWeight: 800 }}>Restoran uchun izoh</div>
-              <div style={{ color: "var(--muted)", fontSize: 13 }}>
-                {note ? (
-                  <i>{note}</i>
-                ) : (
-                  "Agar allergiya yoki istaklaringiz bo‘lsa, yozib qoldiring."
-                )}
+            <h3 className="checkout-card__title" style={{ margin: 0 }}>
+              Savat
+            </h3>
+            {!!items.length && (
+              <button
+                className="btn btn--ghost"
+                onClick={clear}
+                aria-label="Savatchani tozalash"
+              >
+                Tozalash
+              </button>
+            )}
+          </div>
+
+          {!items.length && (
+            <div className="checkout-card__muted">Savat bo‘sh</div>
+          )}
+
+          {items.map((it) => (
+            <div
+              key={it.id}
+              className="summary-row"
+              style={{ alignItems: "center" }}
+            >
+              <div>
+                <div style={{ fontWeight: 800 }}>{it.title || "Mahsulot"}</div>
+                <small className="checkout-card__muted">
+                  {fmt(it.price || 0)} • {it.qty || 0} dona
+                </small>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div className="qty-chip" aria-label={`${it.title} miqdori`}>
+                  <button
+                    className="qty-chip__btn"
+                    onClick={() => dec(it.id)}
+                    aria-label="Kamaytirish"
+                  >
+                    −
+                  </button>
+                  <div className="qty-chip__num">{it.qty || 0}</div>
+                  <button
+                    className="qty-chip__btn"
+                    onClick={() => inc(it.id)}
+                    aria-label="Ko‘paytirish"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <button
+                  className="btn btn--subtle-danger"
+                  onClick={() => remove(it.id)}
+                  aria-label={`${it.title}ni o‘chirish`}
+                  title="O‘chirish"
+                >
+                  O‘chirish
+                </button>
               </div>
             </div>
-            <button className="btn" onClick={() => setNoteOpen(true)}>
-              ✎
-            </button>
-          </div>
+          ))}
         </div>
 
-        <SuggestRow categoryId={firstCatId} />
+        {/* SUGGESTIONS — mavjud komponentdan foydalanyapmiz */}
+        <SuggestRow categoryId={suggestCategoryId} limit={6} />
+
+        {/* “Menyuga qaytish” havolasi (ixtiyoriy) */}
+        <div style={{ marginTop: 12 }}>
+          <Link to="/" className="btn">
+            Menyuga qaytish
+          </Link>
+        </div>
       </div>
 
-      <PayBar
-        label="To‘lovga o‘tish"
-        amount={itemsTotal}
-        onClick={() => nav("/checkout")}
-      />
-
-      <NoteSheet
-        open={noteOpen}
-        initial={note}
-        onClose={() => setNoteOpen(false)}
-        onSave={(t) => setNote(t)}
-      />
-    </section>
+      {/* PAYBAR */}
+      <div className="paybar">
+        <div className="paybar__inner">
+          <div style={{ fontWeight: 800 }}>Jami:&nbsp; {fmt(subtotal)}</div>
+          <button
+            className="paybar__btn"
+            disabled={disablePay}
+            onClick={goCheckout}
+          >
+            To‘lovga o‘tish
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

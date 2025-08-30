@@ -1,74 +1,156 @@
+// src/store/cart.js
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
-const persistKey = "uzd_cart_v2";
-const initial = { items: [], branchId: null, note: "" };
+/* ---------- Normalizatorlar (APIga mos) ---------- */
+const text = (v) => (v == null ? "" : String(v));
 
-function priceDeltaOf(options) {
-  if (!options) return 0;
-  let d = 0;
-  if (Array.isArray(options.extras))
-    for (const ex of options.extras) d += Number(ex?.price || 0);
-  if (options.size?.price) d += Number(options.size.price);
-  if (options._priceDelta) d += Number(options._priceDelta);
-  return d;
-}
-function hydrate() {
-  try {
-    return JSON.parse(localStorage.getItem(persistKey)) || initial;
-  } catch {
-    return initial;
+const idOf = (it) =>
+  it?.id ??
+  it?._id ??
+  it?.product_id ??
+  it?.iiko_product_id ??
+  it?.sku ??
+  it?.slug ??
+  it?.code ??
+  it?.uuid ??
+  null;
+
+const numeric = (v) => {
+  if (typeof v === "number") return v;
+  if (typeof v === "string") {
+    const n = Number(v.replace(/[^\d.-]/g, ""));
+    return Number.isFinite(n) ? n : 0;
   }
-}
-function persist(state) {
-  const s = { items: state.items, branchId: state.branchId, note: state.note };
-  localStorage.setItem(persistKey, JSON.stringify(s));
-}
+  return 0;
+};
 
-export const useCart = create((set, get) => ({
-  ...hydrate(),
+const titleOf = (it) =>
+  it?.title ??
+  it?.name ??
+  it?.name_uz ??
+  it?.name_ru ??
+  it?.product?.title ??
+  it?.product?.name ??
+  it?.product?.name_uz ??
+  it?.product?.name_ru ??
+  "Mahsulot";
 
-  add: (product, qty = 1, options = null) => {
-    const key = JSON.stringify(options || {});
-    const items = get().items.slice();
-    const idx = items.findIndex(
-      (i) =>
-        i.product.id === product.id && JSON.stringify(i.options || {}) === key
-    );
-    const priceDelta = priceDeltaOf(options);
-    if (idx >= 0) items[idx] = { ...items[idx], qty: items[idx].qty + qty };
-    else items.push({ product, qty, options, priceDelta });
-    set({ items });
-    persist(get());
-  },
-  remove: (idx) => {
-    const items = get().items.filter((_, i) => i !== idx);
-    set({ items });
-    persist(get());
-  },
-  setQty: (idx, qty) => {
-    const items = get().items.slice();
-    items[idx] = { ...items[idx], qty: Math.max(1, qty) };
-    set({ items });
-    persist(get());
-  },
+const priceOf = (it) =>
+  numeric(
+    it?.price ??
+      it?.priceUZS ??
+      it?.amount ??
+      it?.cost ??
+      it?.sum ??
+      it?.product?.price ??
+      it?.product?.amount ??
+      0
+  );
 
-  clear: () => {
-    set({ ...initial });
-    localStorage.removeItem(persistKey);
-  },
-  setNote: (note) => {
-    set({ note });
-    persist(get());
-  },
-  setBranch: (branchId) => {
-    set({ branchId });
-    persist(get());
-  },
+const imageOf = (it) =>
+  it?.img ??
+  it?.image ??
+  it?.photo?._url ??
+  it?.images?.[0] ??
+  it?.product?.image ??
+  it?.product?.photo?._url ??
+  null;
 
-  lineTotal: (idx) => {
-    const i = get().items[idx];
-    if (!i) return 0;
-    return (Number(i.product.price) + (i.priceDelta || 0)) * Number(i.qty);
-  },
-  total: () => get().items.reduce((s, _, i) => s + get().lineTotal(i), 0),
-}));
+const normalize = (p, extra = {}) => {
+  const id = idOf(p);
+  return {
+    id,
+    title: titleOf(p),
+    price: priceOf(p),
+    img: imageOf(p),
+    qty: 1,
+    raw: p,
+    ...extra,
+  };
+};
+
+/* ---------- Store ---------- */
+export const useCart = create(
+  persist(
+    (set, get) => ({
+      items: [],
+
+      /* Core actions */
+      add: (product, qty = 1) => {
+        const id = idOf(product);
+        if (id == null) return;
+        const items = [...get().items];
+        const idx = items.findIndex((x) => x.id === id);
+        if (idx > -1) {
+          items[idx] = { ...items[idx], qty: (items[idx].qty || 0) + qty };
+        } else {
+          items.push(normalize(product, { qty: Math.max(1, qty) }));
+        }
+        set({ items });
+      },
+
+      inc: (idOrItem) => {
+        const id = idOf(idOrItem) ?? idOrItem;
+        const items = get().items.map((x) =>
+          x.id === id ? { ...x, qty: (x.qty || 0) + 1 } : x
+        );
+        set({ items });
+      },
+
+      dec: (idOrItem) => {
+        const id = idOf(idOrItem) ?? idOrItem;
+        const items = get()
+          .items.map((x) => (x.id === id ? { ...x, qty: (x.qty || 0) - 1 } : x))
+          .filter((x) => (x.qty || 0) > 0);
+        set({ items });
+      },
+
+      remove: (idOrItem) => {
+        const id = idOf(idOrItem) ?? idOrItem;
+        set({ items: get().items.filter((x) => x.id !== id) });
+      },
+
+      clear: () => set({ items: [] }),
+
+      setQty: (idOrItem, qty) => {
+        const id = idOf(idOrItem) ?? idOrItem;
+        const n = Math.max(0, Number(qty || 0));
+        let items = get().items.map((x) =>
+          x.id === id ? { ...x, qty: n } : x
+        );
+        if (n === 0) items = items.filter((x) => x.id !== id);
+        set({ items });
+      },
+
+      /* Aliases (moslik uchun) */
+      addToCart: (p, q) => get().add(p, q),
+      increment: (x) => get().inc(x),
+      decrease: (x) => get().dec(x),
+      decrement: (x) => get().dec(x),
+      deleteItem: (x) => get().remove(x),
+      removeFromCart: (x) => get().remove(x),
+      clearCart: () => get().clear(),
+    }),
+    {
+      name: "ud_cart_v2",
+      version: 2,
+      storage: createJSONStorage(() => localStorage),
+      migrate: (state) => {
+        // eski saqlangan formatni normalize qilib olamiz
+        if (!state || !Array.isArray(state.items)) return { items: [] };
+        return {
+          ...state,
+          items: state.items
+            .map((x) =>
+              normalize(x.raw ? x.raw : x, { qty: x.qty == null ? 1 : x.qty })
+            )
+            .filter((x) => x.id != null),
+        };
+      },
+      partialize: (s) => ({ items: s.items }),
+    }
+  )
+);
+
+export default useCart;

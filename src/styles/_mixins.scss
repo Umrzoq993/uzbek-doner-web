@@ -1,3 +1,6 @@
+@use "sass:map";
+@use "sass:meta";
+
 /* Breakpoints */
 $bps: (
   sm: 480px,
@@ -6,13 +9,73 @@ $bps: (
   xl: 1280px,
 );
 
+// Media helpers (accept key from $bps or raw number/length)
 @mixin up($bp) {
-  @media (min-width: map-get($bps, $bp)) {
+  $val: if(
+    meta.type-of($bp) == number or meta.type-of($bp) == string,
+    if(meta.type-of($bp) == number, $bp, map.get($bps, $bp)),
+    $bp
+  );
+  @media (min-width: $val) {
     @content;
   }
 }
 @mixin down($bp) {
-  @media (max-width: map-get($bps, $bp)) {
+  $val: if(
+    meta.type-of($bp) == number or meta.type-of($bp) == string,
+    if(meta.type-of($bp) == number, $bp, map.get($bps, $bp)),
+    $bp
+  );
+  @media (max-width: $val) {
     @content;
   }
+}
+
+// Layout & surfaces
+@mixin container {
+  width: min(1200px, 94vw);
+  margin: 0 auto;
+}
+@mixin sticky($top, $z: 45) {
+  position: sticky;
+  top: $top;
+  z-index: $z;
+}
+@mixin card-surface($r: 20px) {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: $r;
+  box-shadow: var(--shadow-1);
+}
+@mixin pill($bg: var(--surface-2), $bd: var(--line)) {
+  border: 1px solid $bd;
+  background: $bg;
+  border-radius: 999px;
+  box-shadow: var(--shadow-1);
+}
+@mixin gradient-brand {
+  background: linear-gradient(180deg, var(--brand), var(--brand-2));
+}
+@mixin no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+@mixin hover-lift {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+}
+@mixin shimmer-bg {
+  background: linear-gradient(90deg, #1b2c44 0%, #233652 50%, #1b2c44 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+@mixin focus-ring {
+  outline: 3px solid color-mix(in oklab, var(--brand) 40%, transparent);
+  outline-offset: 2px;
 }
