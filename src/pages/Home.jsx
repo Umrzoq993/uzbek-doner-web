@@ -30,7 +30,7 @@ export default function Home() {
   const loadMoreRef = useRef(null);
   const scrollingByClickRef = useRef(false);
 
-  // Catbar sliding indikator (ixtiyoriy, bo‘lsa ishlaydi)
+  // Catbar sliding indikator
   const catbarInnerRef = useRef(null);
   const chipRefs = useRef({});
 
@@ -47,7 +47,7 @@ export default function Home() {
     inner.scrollTo({ left: targetLeft, behavior: "smooth" });
   };
 
-  // 1) kategoriyalar
+  // 1) Kategoriyalar
   useEffect(() => {
     (async () => {
       try {
@@ -57,13 +57,14 @@ export default function Home() {
         setVisibleIds(first);
         nextIndexRef.current = BATCH_SIZE;
         setActiveCatId(first[0] || null);
-        // indikatorni dastlab joylashtirish
         requestAnimationFrame(() => moveIndicatorTo(first[0]));
-      } catch {}
+      } catch {
+        /* ignore */
+      }
     })();
   }, []);
 
-  // 2) ko‘rinayotgan kategoriyalar mahsulotlari
+  // 2) Ko‘rinayotgan kategoriyalar mahsulotlari
   useEffect(() => {
     visibleIds.forEach((catId) => {
       if (prodMap[catId] || loadingMap[catId]) return;
@@ -74,7 +75,7 @@ export default function Home() {
     });
   }, [visibleIds, prodMap, loadingMap]);
 
-  // 3) infinite load
+  // 3) Infinite load
   useEffect(() => {
     if (!cats.length) return;
     const el = loadMoreRef.current;
@@ -97,21 +98,13 @@ export default function Home() {
     return () => io.disconnect();
   }, [cats]);
 
-  // 4) chipga bosilganda scroll
-  // 4) chipga bosilganda scroll
+  // 4) Chipga bosilganda scroll
   const scrollToSection = (catId) => {
     let el = sectionRefs.current[catId];
 
-    // Seksiyasi hali DOMga chizilmagan bo‘lsa (lazy render) — avval ko‘rinadigan ro‘yxatga qo‘shamiz
     if (!el) {
-      setVisibleIds((prev) => {
-        if (prev.includes(catId)) return prev;
-        return [...prev, catId]; // tartibni saqlash uchun oxiriga qo‘shish kifoya
-      });
-
+      setVisibleIds((prev) => (prev.includes(catId) ? prev : [...prev, catId]));
       scrollingByClickRef.current = true;
-
-      // DOM yangilangach, shu seksiyaga smooth scroll qilamiz
       requestAnimationFrame(() => {
         const n = sectionRefs.current[catId];
         if (!n) return;
@@ -122,11 +115,9 @@ export default function Home() {
         moveIndicatorTo(catId);
         setTimeout(() => (scrollingByClickRef.current = false), 600);
       });
-
       return;
     }
 
-    // Seksiyasi DOMda bo‘lsa — darhol skroll
     scrollingByClickRef.current = true;
     const y = el.getBoundingClientRect().top + window.scrollY - STICKY_OFFSET;
     window.scrollTo({ top: y, behavior: "smooth" });
@@ -135,7 +126,7 @@ export default function Home() {
     setTimeout(() => (scrollingByClickRef.current = false), 600);
   };
 
-  // 5) aktiv seksiyani kuzatish
+  // 5) Aktiv seksiyani kuzatish
   useEffect(() => {
     const ids = visibleIds;
     if (!ids.length) return;
@@ -168,7 +159,7 @@ export default function Home() {
     return () => obs.disconnect();
   }, [visibleIds, activeCatId]);
 
-  // 6) aktiv chipni ko‘rinishga olib kelish
+  // 6) Aktiv chipni ko‘rinishga olib kelish
   useEffect(() => {
     const btn = catBtnRefs.current[activeCatId];
     if (btn?.scrollIntoView) {
@@ -180,7 +171,7 @@ export default function Home() {
     }
   }, [activeCatId]);
 
-  // 7) tepaga qaytish tugmasi
+  // 7) Tepaga qaytish tugmasi
   useEffect(() => {
     const onScroll = () => setShowTop(window.scrollY > 600);
     onScroll();
@@ -190,36 +181,27 @@ export default function Home() {
 
   const slides = useMemo(() => heroSlides, []);
 
-  // 🧺 Cart bilan sinxron qty xaritasi
+  // 🧺 Cart bilan qty sinxron (store v2: item.id = product.id)
   const qtyMap = useMemo(() => {
     const m = new Map();
     for (const it of cart.items) {
-      const id = it.product?.id;
+      const id = it.id;
       if (id == null) continue;
       m.set(id, (m.get(id) || 0) + (it.qty || 0));
     }
     return m;
   }, [cart.items]);
 
-  const addToCart = (p, qty = 1) => cart.add(p, qty, null);
-
-  const inc = (p) => {
-    cart.add(p, 1, null);
-  };
-  const dec = (p) => {
-    const idx = cart.items.findIndex((it) => it.product.id === p.id);
-    if (idx < 0) return;
-    const cur = cart.items[idx].qty;
-    if (cur <= 1) cart.remove(idx);
-    else cart.setQty(idx, cur - 1);
-  };
+  const addToCart = (p, qty = 1) => cart.add(p, qty);
+  const inc = (p) => cart.inc(p.id);
+  const dec = (p) => cart.dec(p.id);
 
   return (
     <section className="page">
-      {/* Hero — umumiy bannerlar, autoplay */}
+      {/* Hero */}
       <HeroCarousel slides={slides} height={360} auto delay={5000} />
 
-      {/* Sticky kategoriya chips + sliding indikator */}
+      {/* Sticky kategoriya chips + indikator */}
       <nav className="catbar">
         <div
           className="catbar__inner no-scrollbar"
@@ -237,7 +219,6 @@ export default function Home() {
               className={`chip ${c.id === activeCatId ? "is-active" : ""}`}
               onClick={() => scrollToSection(c.id)}
               onPointerUp={(e) => {
-                // mobil/pen pointerlarda onClick bilan kechikish bo‘lishi mumkin — zudlik bilan ishlatamiz
                 if (e.pointerType && e.pointerType !== "mouse") {
                   scrollToSection(c.id);
                 }
@@ -336,12 +317,12 @@ function ProductCard({ product, qty, onAdd, onInc, onDec, onOpen }) {
   const hasQty = qty > 0;
   const numRef = useRef(null);
 
-  // 🔢 qty o‘zgarganda “pop” anim
+  // qty o‘zgarganda “pop” anim
   useEffect(() => {
     const n = numRef.current;
     if (!n) return;
     n.classList.remove("is-pop");
-    void n.offsetWidth; // reflow
+    void n.offsetWidth;
     n.classList.add("is-pop");
   }, [qty]);
 
