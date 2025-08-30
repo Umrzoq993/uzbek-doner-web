@@ -1,34 +1,33 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 
-const initialState = {
-  address: "",
-  coords: null, // { lat, lng } | null
-  city: "",
-  zoom: 15,
-};
+const key = "uzd_location_v1";
+function restore() {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || null;
+  } catch {
+    return null;
+  }
+}
 
-const impl = (set) => ({
-  ...initialState,
-  setAddress: (address) => set({ address }),
-  setCoords: (coords) => set({ coords }),
-  setCity: (city) => set({ city }),
-  setZoom: (zoom) => set({ zoom }),
-  clearLocation: () => set({ ...initialState }),
-});
+export const useLocationStore = create((set, get) => ({
+  // {label, lat, lon, city, street, house}
+  place: restore(),
+  details: { entrance: "", floor: "", apt: "", courierNote: "" },
 
-export const useLocation = create(
-  persist(impl, {
-    name: "uzd_loc_v1",
-    storage: createJSONStorage(() => localStorage),
-    partialize: (s) => ({
-      address: s.address,
-      coords: s.coords,
-      city: s.city,
-      zoom: s.zoom,
-    }),
-  })
-);
+  setPlace: (place) => {
+    set({ place });
+    localStorage.setItem(key, JSON.stringify(place));
+  },
+  clearPlace: () => {
+    set({ place: null });
+    localStorage.removeItem(key);
+  },
 
-// ALIAS: eski kodlarda bo'lgan nomni ham qo'llab-quvvatlaymiz
-export const useLocationStore = useLocation;
+  setDetails: (patch) => set({ details: { ...get().details, ...patch } }),
+  resetDetails: () =>
+    set({ details: { entrance: "", floor: "", apt: "", courierNote: "" } }),
+}));
+
+// ✅ Alias va default eksport: import nomi adashsa ham ishlaydi.
+export const useLocation = useLocationStore;
+export default useLocationStore;

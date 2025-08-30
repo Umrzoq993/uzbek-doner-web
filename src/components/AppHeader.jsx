@@ -13,7 +13,7 @@ export default function AppHeader() {
     [items]
   );
 
-  // Home'dan boshqa sahifalarda back ko'rsatamiz
+  // Home’dan boshqa sahifalarda back tugma ko‘rsin
   const showBack = useMemo(() => {
     const path = pathname.split("?")[0];
     return path !== "/" && path !== "";
@@ -24,7 +24,7 @@ export default function AppHeader() {
     else nav("/");
   };
 
-  // Badge "bump" animatsiyasi
+  // Savat badge “bump” animatsiyasi
   const prevCountRef = useRef(count);
   const [bump, setBump] = useState(false);
   useEffect(() => {
@@ -38,8 +38,10 @@ export default function AppHeader() {
 
   return (
     <>
+      {/* Header: mobil static, desktop fixed – SCSS boshqaradi */}
       <header className="header">
         <div className="header__inner">
+          {/* Back tugma (mobil va desktop) */}
           {showBack && (
             <button
               className="header__back header__back--desktop"
@@ -50,20 +52,22 @@ export default function AppHeader() {
             </button>
           )}
 
-            <button
-              className="brand"
-              onClick={() => nav("/")}
-              aria-label="UzbekDoner bosh sahifa"
-            >
-              <img
-                src="/logo-navbar.png"
-                alt="UzbekDoner"
-                className="brand__logo"
-                loading="eager"
-                decoding="sync"
-              />
-            </button>
+          {/* Brend logotip */}
+          <button
+            className="brand"
+            onClick={() => nav("/")}
+            aria-label="UzbekDoner bosh sahifa"
+          >
+            <img
+              src="/logo-navbar.png"
+              alt="UzbekDoner"
+              className="brand__logo"
+              loading="eager"
+              decoding="sync"
+            />
+          </button>
 
+          {/* Desktop uchun savat chipi */}
           <Link
             to="/cart"
             className="cart-ind cart-ind--lg hide-on-mobile"
@@ -82,8 +86,12 @@ export default function AppHeader() {
         </div>
       </header>
 
-      {/* Mobil FAB */}
-      <Link to="/cart" className="cart-fab-mobile show-on-mobile" aria-label="Savat">
+      {/* Mobil uchun pastki o‘ngda savat FAB */}
+      <Link
+        to="/cart"
+        className="cart-fab-mobile show-on-mobile"
+        aria-label="Savat"
+      >
         <ShoppingCart size={26} strokeWidth={2.5} />
         {count > 0 && <span className="cart-fab-mobile__badge">{count}</span>}
       </Link>
