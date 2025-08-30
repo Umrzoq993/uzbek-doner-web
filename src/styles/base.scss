@@ -3,9 +3,9 @@
 @use "sass:map";
 @use "sass:meta";
 
-/* -----------------------------
-   Breakpoints & Helpers
-------------------------------*/
+/* ---------------------------------
+   Breakpoints & mixins
+----------------------------------*/
 $bps: (
   sm: 480px,
   md: 768px,
@@ -13,16 +13,15 @@ $bps: (
   xl: 1280px,
 );
 
-/* Accepts either a key from $bps OR a raw number value like 640px */
 @mixin up($bp) {
-  $val: if(meta.type-of($bp) == number, $bp, map.get($bps, $bp));
-  @media (min-width: $val) {
+  $v: if(meta.type-of($bp) ==number, $bp, map.get($bps, $bp));
+  @media (min-width: $v) {
     @content;
   }
 }
 @mixin down($bp) {
-  $val: if(meta.type-of($bp) == number, $bp, map.get($bps, $bp));
-  @media (max-width: $val) {
+  $v: if(meta.type-of($bp) ==number, $bp, map.get($bps, $bp));
+  @media (max-width: $v) {
     @content;
   }
 }
@@ -37,17 +36,10 @@ $bps: (
   z-index: $z;
 }
 @mixin card-surface($r: 20px) {
-  /* Shisha karta miksi: ko‘k rangli “glass” + engil ichki yaltirash */
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.05),
-    rgba(255, 255, 255, 0.03)
-  );
-  border: 1px solid color-mix(in srgb, var(--brand) 10%, var(--line));
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: $r;
-  box-shadow: var(--shadow-1), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(8px) saturate(120%);
-  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  box-shadow: var(--shadow-1);
 }
 @mixin pill($bg: var(--surface-2), $bd: var(--line)) {
   border: 1px solid $bd;
@@ -69,53 +61,27 @@ $bps: (
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   &:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
-  }
-}
-@mixin shimmer-bg {
-  background: linear-gradient(90deg, #2a2a2a 0%, #333 50%, #2a2a2a 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.2s infinite;
-}
-
-/* tokens (layer, size) */
-:root {
-  --r-s: 12px;
-  --r-m: 16px;
-  --r-l: 20px;
-  --shadow-soft: 0 6px 18px rgba(7, 18, 38, 0.35);
-  --shadow-hover: 0 18px 44px rgba(7, 18, 38, 0.46);
-  --paybar-h: 72px;
-
-  --z-header: 1000;
-  --z-catbar: 950;
-  --z-fab: 1200;
-  --z-modal: 4000;
-
-  --header-h: 64px;
-  --header-gap: 10px;
-
-  --fab-size: 56px;
-  --fab-gap: 18px;
-}
-@media (min-width: 768px) {
-  :root {
-    --header-h: 70px;
+    box-shadow: var(--shadow-2);
   }
 }
 
-/* -----------------------------
+/* ---------------------------------
    Base
-------------------------------*/
+----------------------------------*/
 html,
 body,
 #root {
   height: 100%;
 }
-
 body {
-  /* --- Deep-navy fon (countdown’dagi kabi) --- */
-  background: var(--bg);
+  /* deep night gradient, countdown-like */
+  background: radial-gradient(
+      900px 600px at 50% -100px,
+      #12385f44,
+      transparent 65%
+    ),
+    radial-gradient(1200px 800px at 50% 120%, #0c2c4f33, transparent 60%),
+    linear-gradient(180deg, var(--bg), var(--bg-2));
   color: var(--fg);
   font: var(--fs-2) / 1.5 Inter, ui-sans-serif, system-ui, -apple-system,
     Segoe UI, Roboto, sans-serif;
@@ -125,9 +91,9 @@ body {
   @include container;
 }
 
-/* Header fixed bo‘lgani uchun desktopda tepaga joy ochamiz */
+/* page spacing: desktop has fixed header */
 .page {
-  padding: 14px 0 120px; /* mobile */
+  padding: 14px 0 120px;
   @include up(md) {
     padding-top: calc(var(--header-h) + var(--header-gap) + 14px);
   }
@@ -141,35 +107,36 @@ body {
   );
 }
 
-/* -----------------------------
-   Header (mobile: static; desktop: fixed)
-------------------------------*/
+/* ---------------------------------
+   Header
+----------------------------------*/
 .header {
-  position: static; /* mobile */
+  position: static; /* mobile: not pinned */
   @include container;
   margin-bottom: var(--header-gap);
   border-radius: 999px;
   @include card-surface(999px);
-  backdrop-filter: saturate(140%) blur(10px);
-  -webkit-backdrop-filter: saturate(140%) blur(10px);
-  background: color-mix(in oklab, var(--surface) 90%, transparent);
-  border-color: color-mix(in oklab, var(--line) 85%, transparent);
-  box-shadow: var(--shadow-soft);
+  background: color-mix(in oklab, var(--surface) 92%, transparent);
+  border-color: color-mix(in oklab, #ffffff 10%, var(--line));
+  backdrop-filter: saturate(140%) blur(8px);
+  -webkit-backdrop-filter: saturate(140%) blur(8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 
   &__inner {
     padding: 10px 14px;
+    min-height: var(--header-h);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    min-height: var(--header-h);
   }
 
+  /* desktop: fixed centered */
   @include up(md) {
     position: fixed;
-    top: env(safe-area-inset-top, 0px);
     left: 50%;
     transform: translateX(-50%);
+    top: env(safe-area-inset-top, 0px);
     width: min(1200px, 94vw);
     z-index: var(--z-header);
   }
@@ -178,9 +145,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  border: 0;
-  background: transparent;
   padding: 6px 8px;
+  background: transparent;
+  border: 0;
   cursor: pointer;
 }
 .brand__logo {
@@ -189,13 +156,12 @@ body {
   display: block;
   object-fit: contain;
 }
-@media (min-width: 768px) {
+@include up(md) {
   .brand__logo {
     height: 40px;
   }
 }
 
-/* header ichidagi ko‘rsatish/yashirish */
 .hide-on-mobile {
   @include down(md) {
     display: none !important;
@@ -207,24 +173,24 @@ body {
   }
 }
 
-/* Savat chipi */
+/* header cart chip */
 .cart-ind {
   position: relative;
   display: inline-flex;
   gap: 8px;
   align-items: center;
   padding: 8px 12px;
-  background: var(--glass-2);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--line);
   border-radius: 9999px;
   transition: box-shadow 0.18s ease, transform 0.12s ease;
-
   &__icon {
-    display: inline-flex;
     line-height: 0;
+    display: inline-flex;
   }
   &__label {
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--fg);
   }
   &__badge {
     position: absolute;
@@ -232,13 +198,13 @@ body {
     right: -6px;
     background: var(--brand);
     color: #fff;
-    border-radius: 9999px;
+    border-radius: 999px;
     font-size: 12px;
     padding: 2px 6px;
-    box-shadow: 0 8px 20px rgba(43, 98, 255, 0.35);
+    box-shadow: 0 8px 22px rgba(59, 130, 246, 0.35);
   }
   &:hover {
-    box-shadow: var(--shadow-soft);
+    box-shadow: var(--shadow-2);
   }
   &:active {
     transform: translateY(1px);
@@ -252,13 +218,13 @@ body {
   }
   .cart-ind__label {
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 800;
   }
 }
 
-/* -----------------------------
-   Hero (Carousel)
-------------------------------*/
+/* ---------------------------------
+   Hero
+----------------------------------*/
 @keyframes kenburns {
   from {
     transform: scale(1.04);
@@ -267,17 +233,15 @@ body {
     transform: scale(1.1);
   }
 }
-
 .hero {
   position: relative;
   @include container;
   margin: 12px auto 18px;
   border-radius: 24px;
   overflow: hidden;
-  background: linear-gradient(135deg, #0f2744, #0f2744); /* neytral fon */
+  background: linear-gradient(135deg, #1a3a62, #102742);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-2);
-
   &__track {
     display: flex;
     height: 100%;
@@ -295,18 +259,16 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: saturate(1.02);
+    filter: saturate(1.05);
     animation: kenburns 10s ease-in-out infinite alternate;
-    transform-origin: center;
   }
   &__overlay {
     position: absolute;
     inset: 0;
-    /* --- Hero rasmlarida pastdan qoraytirish kuchaytiriladi --- */
     background: linear-gradient(
       180deg,
       rgba(0, 0, 0, 0.08) 0%,
-      rgba(0, 0, 0, 0.55) 90%
+      rgba(0, 0, 0, 0.45) 85%
     );
     pointer-events: none;
   }
@@ -318,7 +280,7 @@ body {
     display: grid;
     gap: 8px;
     color: #fff;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   }
   &__title {
     font-weight: 900;
@@ -337,14 +299,13 @@ body {
     width: 40px;
     height: 40px;
     border-radius: 999px;
-    background: rgba(6, 22, 41, 0.55);
+    background: rgba(0, 0, 0, 0.35);
     color: #fff;
     cursor: pointer;
     display: grid;
     place-items: center;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(4px);
+    box-shadow: var(--shadow-1);
     &--left {
       left: 10px;
     }
@@ -367,7 +328,7 @@ body {
     border-radius: 999px;
     border: 0;
     cursor: pointer;
-    background: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.55);
     transition: width 0.22s ease, background 0.22s ease, transform 0.22s ease;
     &.is-active {
       width: 22px;
@@ -383,55 +344,11 @@ body {
   }
 }
 
-/* === Qty number pop === */
-@keyframes qty-pop {
-  0% {
-    transform: scale(1);
-  }
-  40% {
-    transform: scale(1.18);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-/* === Cart badge: bump + shake === */
-@keyframes badge-bump {
-  0% {
-    transform: translateY(0) scale(1);
-  }
-  30% {
-    transform: translateY(-3px) scale(1.08);
-  }
-  60% {
-    transform: translateY(0) scale(0.98);
-  }
-  100% {
-    transform: translateY(0) scale(1);
-  }
-}
-@keyframes badge-shake {
-  0%,
-  100% {
-    transform: rotate(0);
-  }
-  25% {
-    transform: rotate(-8deg);
-  }
-  50% {
-    transform: rotate(6deg);
-  }
-  75% {
-    transform: rotate(-4deg);
-  }
-}
-
-/* -----------------------------
+/* ---------------------------------
    Tabs
-------------------------------*/
+----------------------------------*/
 .tabs {
-  @include sticky(76px, 45);
+  @include sticky(76px, var(--z-catbar));
   @include container;
   margin: 10px auto 14px;
   padding: 6px;
@@ -439,34 +356,38 @@ body {
   gap: 8px;
   overflow: auto;
   @include card-surface(9999px);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--surface) 88%, transparent),
+    color-mix(in oklab, var(--surface) 96%, transparent)
+  );
 }
 .tab {
   flex: 0 0 auto;
   white-space: nowrap;
   padding: 10px 14px;
   border-radius: 9999px;
-  border: 1px solid color-mix(in oklab, var(--line) 85%, transparent);
-  background: var(--glass-1);
+  border: 1px solid color-mix(in oklab, #fff 8%, var(--line));
+  background: rgba(255, 255, 255, 0.04);
   color: var(--fg);
   cursor: pointer;
-  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+  transition: transform 0.12s ease, box-shadow 0.18s ease, background 0.18s ease,
+    color 0.18s ease;
   &:hover {
-    box-shadow: var(--shadow-soft);
+    box-shadow: var(--shadow-1);
     transform: translateY(-1px);
-  }
-  &:active {
-    transform: translateY(1px);
   }
   &.is-active {
     @include gradient-brand;
     color: #fff;
     border-color: transparent;
+    box-shadow: 0 12px 30px rgba(59, 130, 246, 0.35);
   }
 }
 
-/* -----------------------------
-   Grid & Card
-------------------------------*/
+/* ---------------------------------
+   Grid & Cards
+----------------------------------*/
 .grid {
   display: grid;
   gap: 18px;
@@ -484,9 +405,6 @@ body {
   @include hover-lift;
 }
 
-/* -----------------------------
-   Product Card
-------------------------------*/
 .product-card {
   @extend .card;
   padding: 0;
@@ -494,7 +412,6 @@ body {
   display: grid;
   grid-template-rows: auto 1fr;
   cursor: pointer;
-
   &__media {
     aspect-ratio: 4/3;
     background: var(--surface-2);
@@ -527,7 +444,6 @@ body {
   &__desc {
     color: var(--muted);
     font-size: var(--fs-3);
-    min-height: calc(1.25em * 2 + 2px);
   }
   &__footer {
     display: grid;
@@ -544,29 +460,26 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: calc(1.2em * 2 + 2px);
 }
 
-/* -----------------------------
+/* ---------------------------------
    Buttons
-------------------------------*/
+----------------------------------*/
 .btn {
   border: 0;
   border-radius: 9999px;
   padding: 12px 18px;
   cursor: pointer;
-  background: var(--glass-2);
-  border: 1px solid var(--line);
+  background: var(--surface-2);
   position: relative;
   overflow: hidden;
   transition: transform 0.12s ease, box-shadow 0.18s ease, background 0.18s ease;
-
   &--primary {
     @include gradient-brand;
     color: #fff;
-    border-color: transparent;
+    box-shadow: 0 12px 28px rgba(59, 130, 246, 0.35);
     &:hover {
-      box-shadow: 0 16px 40px rgba(43, 98, 255, 0.35);
+      box-shadow: 0 18px 36px rgba(59, 130, 246, 0.45);
     }
   }
   &:active {
@@ -575,12 +488,12 @@ body {
 }
 .btn--primary.is-pop {
   transform: scale(1.06);
-  box-shadow: 0 18px 48px rgba(43, 98, 255, 0.38);
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.45);
 }
 
-/* -----------------------------
-   Bottom Sheet (Modal)
-------------------------------*/
+/* ---------------------------------
+   Modal (bottom sheet style on desktop too)
+----------------------------------*/
 @keyframes su {
   from {
     transform: translateY(12px);
@@ -591,23 +504,14 @@ body {
     opacity: 1;
   }
 }
-
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  /* --- Modal fonini biroz ko‘proq dimmala + blur --- */
-  background: radial-gradient(
-      800px 500px at 50% -80px,
-      rgba(47, 125, 243, 0.18),
-      transparent 60%
-    ),
-    rgba(3, 10, 20, 0.55);
+  background: rgba(6, 14, 26, 0.6);
   display: grid;
   place-items: end center;
   z-index: var(--z-modal);
   padding: 14px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
 }
 .sheet {
   width: 100%;
@@ -618,17 +522,20 @@ body {
   border-top-right-radius: 24px;
   overflow: auto;
   animation: su 0.26s ease;
-  z-index: calc(var(--z-modal) + 1);
+  box-shadow: var(--shadow-3);
   position: relative;
-
+  z-index: calc(var(--z-modal) + 1);
   &--product {
     max-width: min(900px, 96vw);
-    position: relative;
   }
   &__head {
     position: sticky;
     top: 0;
-    background: var(--surface);
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--surface) 96%, transparent),
+      var(--surface)
+    );
     border-bottom: 1px solid var(--line);
     display: flex;
     gap: 10px;
@@ -642,14 +549,14 @@ body {
     right: 10px;
     top: 10px;
     z-index: 2;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 999px;
     border: 0;
-    background: var(--glass-2);
+    background: rgba(255, 255, 255, 0.06);
     color: var(--fg);
+    backdrop-filter: blur(6px);
     cursor: pointer;
-    box-shadow: var(--shadow-1);
   }
 }
 .product-hero {
@@ -672,7 +579,7 @@ body {
     background: linear-gradient(
       180deg,
       rgba(0, 0, 0, 0) 0%,
-      rgba(3, 10, 22, 0.45) 75%
+      rgba(0, 0, 0, 0.35) 75%
     );
     pointer-events: none;
   }
@@ -686,20 +593,19 @@ body {
   border-radius: 999px;
   font-weight: 800;
   font-size: 13px;
-  background: #ff4d4f;
   color: #fff;
   box-shadow: var(--shadow-2);
-  &--sale {
-    background: linear-gradient(135deg, #ff6363, #ff2e7a);
-  }
+  background: linear-gradient(135deg, #ff6363, #ff2e7a);
 }
+
+/* texts inside sheet */
 .product-title {
   font-weight: 900;
   font-size: 22px;
   margin: 0;
 }
 .badge {
-  background: var(--glass-1);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--fg);
   border: 1px solid var(--line);
   padding: 4px 8px;
@@ -738,7 +644,7 @@ body {
   padding: 10px 12px;
   border: 1px dashed var(--line);
   border-radius: 12px;
-  background: var(--glass-1);
+  background: rgba(255, 255, 255, 0.04);
 }
 .total-label {
   color: var(--muted);
@@ -752,6 +658,7 @@ body {
   display: flex;
   justify-content: flex-end;
 }
+
 @include down(640px) {
   .product-hero {
     aspect-ratio: 4/3;
@@ -761,9 +668,9 @@ body {
   }
 }
 
-/* -----------------------------
-   Sticky Bottom Bar (Delivery)
-------------------------------*/
+/* ---------------------------------
+   Delivery bar
+----------------------------------*/
 .delivery {
   position: fixed;
   left: 0;
@@ -773,10 +680,11 @@ body {
   padding: 12px 14px;
   background: linear-gradient(
     180deg,
-    rgba(8, 18, 34, 0.9),
-    rgba(8, 18, 34, 0.98)
+    rgba(10, 28, 50, 0.86),
+    rgba(10, 28, 50, 0.96)
   );
   border-top: 1px solid var(--line);
+  backdrop-filter: blur(8px);
 }
 .delivery__inner {
   @include container;
@@ -798,9 +706,9 @@ body {
   }
 }
 
-/* -----------------------------
-   Catbar
-------------------------------*/
+/* ---------------------------------
+   Catbar (sticky categories)
+----------------------------------*/
 .catbar {
   @include sticky(env(safe-area-inset-top, 0px), var(--z-catbar));
   @include card-surface(999px);
@@ -808,7 +716,11 @@ body {
   overflow: hidden;
   margin: 12px auto;
   padding: 6px;
-
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--surface) 90%, transparent),
+    var(--surface)
+  );
   @include up(md) {
     top: calc(
       env(safe-area-inset-top, 0px) + var(--header-h) + var(--header-gap)
@@ -825,7 +737,6 @@ body {
     touch-action: pan-x;
     @include no-scrollbar;
   }
-
   &__indicator {
     position: absolute;
     left: var(--ind-x, 0);
@@ -834,13 +745,12 @@ body {
     height: calc(100% - 12px);
     border-radius: 999px;
     @include gradient-brand;
-    box-shadow: 0 8px 20px rgba(43, 98, 255, 0.35);
+    box-shadow: 0 8px 26px rgba(59, 130, 246, 0.35);
     transition: left 0.34s cubic-bezier(0.22, 1, 0.36, 1),
       width 0.34s cubic-bezier(0.22, 1, 0.36, 1);
     z-index: 0;
     pointer-events: none;
   }
-
   &::before,
   &::after {
     content: "";
@@ -862,20 +772,18 @@ body {
 .chip {
   position: relative;
   z-index: 1;
-  border: 1px solid color-mix(in oklab, var(--line) 85%, transparent);
-  background: var(--glass-1);
+  border: 1px solid color-mix(in oklab, #fff 10%, var(--line));
+  background: rgba(255, 255, 255, 0.04);
   padding: 10px 14px;
   border-radius: 999px;
   white-space: nowrap;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
-  color: var(--fg);
   touch-action: manipulation;
   transition: transform 0.12s ease, color 0.18s ease, box-shadow 0.18s ease,
-    background 0.18s ease, border-color 0.18s ease;
-
+    background 0.18s ease;
   &:hover {
-    box-shadow: var(--shadow-soft);
+    box-shadow: var(--shadow-1);
     transform: translateY(-1px);
   }
   &:active {
@@ -889,12 +797,13 @@ body {
     color: #fff;
     background: linear-gradient(180deg, var(--brand), var(--brand-2));
     border-color: transparent;
+    box-shadow: 0 10px 28px rgba(59, 130, 246, 0.35);
   }
 }
 
-/* -----------------------------
-   Category Sections
-------------------------------*/
+/* ---------------------------------
+   Section heads
+----------------------------------*/
 .cat-section__head {
   display: flex;
   align-items: center;
@@ -907,33 +816,54 @@ body {
   font-size: clamp(18px, 2.6vw, 22px);
 }
 
-/* -----------------------------
+/* ---------------------------------
    FAB & ScrollTop
-------------------------------*/
-.fab {
-  position: absolute;
-  right: 14px;
-  bottom: 14px;
-  width: 44px;
-  height: 44px;
+----------------------------------*/
+@keyframes heartbeat {
+  0%,
+  24%,
+  60%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.12);
+  }
+  36% {
+    transform: scale(1.07);
+  }
+}
+.cart-fab-mobile {
+  position: fixed;
+  right: var(--fab-gap);
+  bottom: calc(
+    var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px)
+  );
+  z-index: var(--z-fab);
+  width: var(--fab-size);
+  height: var(--fab-size);
+  border-radius: 9999px;
   display: grid;
   place-items: center;
   @include gradient-brand;
   color: #fff;
-  border-radius: 9999px;
-  border: none;
-  box-shadow: var(--shadow-2);
-  cursor: pointer;
-  font-size: 22px;
-  transition: transform 0.12s ease, box-shadow 0.18s ease, opacity 0.18s ease;
-  &:hover {
-    box-shadow: var(--shadow-hover);
-  }
-  &:active {
-    transform: translateY(1px);
+  box-shadow: 0 16px 44px rgba(59, 130, 246, 0.45);
+  animation: heartbeat 1.8s ease-in-out infinite;
+  will-change: transform;
+  &__badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ff4d4f;
+    color: #fff;
+    border-radius: 9999px;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 2px 6px;
+    box-shadow: 0 8px 22px rgba(255, 77, 79, 0.35);
   }
 }
-
+/* Default (desktop) */
 .scrolltop {
   position: fixed;
   right: 18px;
@@ -951,8 +881,7 @@ body {
   color: #fff;
   box-shadow: var(--shadow-2);
 }
-
-/* mobile joylashuvi — savatcha FAB bilan to‘qnashmasin */
+/* Mobile: scrolltop FAB chapida */
 @include down(md) {
   .scrolltop {
     right: calc(var(--fab-gap) + var(--fab-size) + 12px);
@@ -961,6 +890,7 @@ body {
     );
   }
 }
+/* extra-narrow phones (<=380px): scrolltop FAB ostiga */
 @media (max-width: 380px) {
   .scrolltop {
     right: var(--fab-gap);
@@ -971,9 +901,9 @@ body {
   }
 }
 
-/* -----------------------------
-   Metrics block (home top)
-------------------------------*/
+/* ---------------------------------
+   Metrics
+----------------------------------*/
 .metrics {
   display: flex;
   justify-content: center;
@@ -987,7 +917,7 @@ body {
   align-items: center;
   gap: 6px;
   padding: 10px 14px;
-  background: var(--glass-1);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--line);
   border-radius: 16px;
   &__cap {
@@ -996,9 +926,9 @@ body {
   }
 }
 
-/* -----------------------------
-   Toastify (dark glass)
-------------------------------*/
+/* ---------------------------------
+   Toastify
+----------------------------------*/
 .Toastify__toast {
   border: 1px solid var(--line);
   background: var(--surface);
@@ -1010,23 +940,22 @@ body {
   border-color: rgba(255, 120, 120, 0.35);
 }
 .Toastify__toast--success {
-  border-color: rgba(74, 160, 255, 0.35);
+  border-color: rgba(59, 130, 246, 0.35);
 }
 .Toastify__progress-bar {
   background: var(--brand);
 }
 
-/* -----------------------------
+/* ---------------------------------
    Footer
-------------------------------*/
+----------------------------------*/
 .footer {
   margin-top: 28px;
   background: color-mix(in oklab, var(--surface) 96%, transparent);
-  border-top: 1px solid color-mix(in oklab, var(--line) 80%, transparent);
-  box-shadow: 0 -8px 24px rgba(7, 18, 38, 0.25);
+  border-top: 1px solid color-mix(in oklab, var(--line) 70%, transparent);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
   position: relative;
   z-index: 1;
-
   &__grid {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
@@ -1064,7 +993,7 @@ body {
 }
 .subfooter {
   border-top: 1px dashed var(--line);
-  background: var(--surface-2);
+  background: rgba(255, 255, 255, 0.04);
 }
 .subfooter__inner {
   display: flex;
@@ -1098,9 +1027,9 @@ body {
   }
 }
 
-/* -----------------------------
+/* ---------------------------------
    Suggest
-------------------------------*/
+----------------------------------*/
 .suggest {
   margin-top: 16px;
   &__head {
@@ -1127,17 +1056,17 @@ body {
   }
 }
 
-/* -----------------------------
+/* ---------------------------------
    Mini-card
-------------------------------*/
+----------------------------------*/
 .mini-card {
   @include card-surface(14px);
   overflow: hidden;
   display: grid;
   grid-template-rows: auto 1fr;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-1);
   &:hover {
-    box-shadow: var(--shadow-hover);
+    box-shadow: var(--shadow-2);
   }
   &__media {
     aspect-ratio: 4/3;
@@ -1170,13 +1099,15 @@ body {
     font-weight: 900;
   }
   &.is-skeleton &__media {
-    @include shimmer-bg;
+    background: linear-gradient(90deg, #132d4d 0%, #1a3c63 50%, #132d4d 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite;
   }
 }
 
-/* -----------------------------
-   Utilities
-------------------------------*/
+/* ---------------------------------
+   Utilities & skeleton
+----------------------------------*/
 .center {
   display: grid;
   place-items: center;
@@ -1197,16 +1128,14 @@ body {
   display: none !important;
 }
 
-/* === Product-card inline qty stepper === */
 .qty-chip {
-  @include pill(var(--glass-1), var(--line));
+  @include pill(rgba(255, 255, 255, 0.06), var(--line));
   display: grid;
   grid-template-columns: 36px 1fr 36px;
   align-items: center;
   gap: 6px;
   height: 40px;
   padding: 0 6px;
-
   &__btn {
     width: 36px;
     height: 28px;
@@ -1237,11 +1166,7 @@ body {
     font-weight: 900;
     font-size: 14px;
     user-select: none;
-    &.is-pop {
-      animation: qty-pop 220ms ease-out;
-    }
   }
-
   @media (max-width: 420px) {
     grid-template-columns: 32px 1fr 32px;
     height: 36px;
@@ -1252,26 +1177,13 @@ body {
   }
 }
 
-/* -----------------------------
-   Skeleton/Shimmer
-------------------------------*/
 @keyframes shimmer {
   to {
     background-position: 200% 0;
   }
 }
-.skeleton {
-  @include shimmer-bg;
-}
-.skeleton-line {
-  height: 10px;
-  border-radius: 8px;
-  @include shimmer-bg;
-}
 
-/* -----------------------------
-   Accessibility
-------------------------------*/
+/* Accessibility */
 @media (prefers-reduced-motion: reduce) {
   .card,
   .product-card,
@@ -1280,122 +1192,8 @@ body {
   .chip {
     transition: none !important;
   }
-  .hero__image {
-    animation: none !important;
-  }
-}
-
-/* -----------------------------
-   Mobile Cart FAB (heartbeat)
-------------------------------*/
-@keyframes heartbeat {
-  0%,
-  24%,
-  60%,
-  100% {
-    transform: scale(1);
-  }
-  12% {
-    transform: scale(1.12);
-  }
-  36% {
-    transform: scale(1.07);
-  }
-}
-.cart-fab-mobile {
-  position: fixed;
-  right: var(--fab-gap);
-  bottom: calc(
-    var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px)
-  );
-  z-index: var(--z-fab);
-  width: var(--fab-size);
-  height: var(--fab-size);
-  border-radius: 9999px;
-  display: grid;
-  place-items: center;
-  @include gradient-brand;
-  color: #fff;
-  box-shadow: 0 18px 48px rgba(43, 98, 255, 0.38);
-  animation: heartbeat 1.8s ease-in-out infinite;
-  will-change: transform;
-
-  &__badge {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    background: #ff4d4f;
-    color: #fff;
-    border-radius: 9999px;
-    font-weight: 800;
-    font-size: 12px;
-    padding: 2px 6px;
-    box-shadow: 0 6px 16px rgba(255, 77, 79, 0.35);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
+  .hero__image,
   .cart-fab-mobile {
     animation: none !important;
   }
-}
-
-/* ---------------------------------
-   Glass element general overrides
-----------------------------------*/
-.header,
-.catbar,
-.tabs,
-.card,
-.mini-card,
-.sheet {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.06),
-    rgba(255, 255, 255, 0.03)
-  );
-  border-color: color-mix(in srgb, var(--brand) 10%, var(--line));
-  box-shadow: var(--shadow-1);
-}
-
-/* Chip states */
-.chip {
-  color: var(--fg);
-  border-color: color-mix(in srgb, var(--brand) 10%, var(--line));
-  background: rgba(255, 255, 255, 0.02);
-}
-.chip.is-active {
-  background: linear-gradient(180deg, var(--brand), var(--brand-2));
-  color: #fff;
-  box-shadow: 0 10px 26px rgba(47, 125, 243, 0.35),
-    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
-  border-color: transparent;
-}
-
-/* Primary button */
-.btn--primary {
-  background: linear-gradient(180deg, var(--brand), var(--brand-2));
-  color: #fff;
-  box-shadow: 0 14px 34px rgba(47, 125, 243, 0.38),
-    0 2px 0 rgba(255, 255, 255, 0.12) inset;
-  border: 1px solid color-mix(in srgb, var(--brand) 18%, transparent);
-}
-
-/* Product titles & prices contrast */
-.product-title,
-.price-main {
-  color: rgba(246, 250, 255, 0.98);
-}
-.product-desc,
-.price-old,
-.footer__muted,
-.metric__cap {
-  color: var(--muted);
-}
-
-/* FAB & ScrollTop shadow tweaks */
-.cart-fab-mobile {
-  box-shadow: 0 16px 38px rgba(47, 125, 243, 0.4);
-}
-.scrolltop {
-  box-shadow: 0 14px 30px rgba(47, 125, 243, 0.3);
 }

@@ -1,45 +1,62 @@
 :root {
-  /* Neon blue brand */
-  --brand: #2f7df3;
-  --brand-2: #60a5fa;
-  --brand-3: #93c5fd;
+  /* Brand */
+  --brand: #3b82f6; /* primary (tailwind-ish blue-500) */
+  --brand-2: #2563eb; /* darker stop for gradient */
 
-  /* Deep-navy fonlar (countdown uslubi) */
-  --bg: radial-gradient(
-      1200px 800px at 50% -220px,
-      rgba(47, 125, 243, 0.14),
-      transparent 60%
-    ),
-    linear-gradient(180deg, #071c2e 0%, #0b2136 55%, #0a1b2b 100%);
+  /* Dark theme core */
+  --bg: #081a2b; /* page bg base */
+  --bg-2: #0a2037; /* deep bg */
+  --surface: #0f2742; /* cards/modals */
+  --surface-2: #0c2239; /* chips/inputs */
+  --line: rgba(255, 255, 255, 0.08); /* subtle borders */
 
-  /* Glassy yuzalar */
-  --surface: rgba(13, 34, 57, 0.84);
-  --surface-2: rgba(11, 31, 54, 0.66);
-  --line: rgba(255, 255, 255, 0.08);
+  /* Text */
+  --fg: #e8f0ff;
+  --muted: #a8b5c7;
 
-  /* Matnlar */
-  --fg: rgba(244, 248, 255, 0.94);
-  --muted: rgba(206, 220, 239, 0.65);
-
-  /* Soyalarga ko‘kimtir tus */
-  --shadow-1: 0 8px 26px rgba(12, 31, 54, 0.25);
-  --shadow-2: 0 18px 60px rgba(12, 31, 54, 0.42);
-  --shadow-soft: 0 10px 28px rgba(25, 69, 124, 0.25);
-  --shadow-hover: 0 18px 46px rgba(47, 125, 243, 0.22);
-
-  /* o‘lchamlar */
+  /* Radii & shadows */
   --r-s: 12px;
   --r-m: 16px;
   --r-l: 22px;
-  --fs-1: clamp(18px, 1.3vw, 20px);
+  --shadow-1: 0 6px 18px rgba(3, 12, 24, 0.25);
+  --shadow-2: 0 18px 60px rgba(3, 12, 24, 0.45);
+  --shadow-3: 0 28px 80px rgba(2, 10, 22, 0.55); /* modal */
+
+  /* Type scale */
+  --fs-1: clamp(18px, 1.35vw, 20px);
   --fs-2: 15px;
   --fs-3: 13px;
 
-  /* layyerlar */
+  /* UI sizes */
+  --paybar-h: 72px;
+  --header-h: 68px;
+  --header-gap: 12px;
+
+  /* Layers */
   --z-header: 1000;
   --z-catbar: 950;
   --z-fab: 1200;
   --z-modal: 4000;
 
-  --paybar-h: 72px;
+  /* FAB */
+  --fab-size: 56px;
+  --fab-gap: 18px;
+}
+
+/* Optional light scheme fallback (if kerak bo‘lsa, o‘chirib qo‘yishingiz mumkin) */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f8fb;
+    --bg-2: #eef2f8;
+    --surface: #fff;
+    --surface-2: #f2f3f7;
+    --line: rgba(18, 20, 30, 0.08);
+
+    --fg: #14161a;
+    --muted: #667084;
+
+    --shadow-1: 0 6px 18px rgba(17, 21, 33, 0.08);
+    --shadow-2: 0 16px 48px rgba(17, 21, 33, 0.12);
+    --shadow-3: 0 24px 60px rgba(17, 21, 33, 0.18);
+  }
 }
