@@ -8,6 +8,7 @@ import Img from "../components/Img";
 import heroSlides from "../data/heroSlides";
 import { useT, useMoneyFormatter } from "../i18n/i18n";
 import { useLangStore } from "../store/lang";
+import { useLocationStore } from "../store/location";
 
 // money formatting now localized
 // const fmt = (n) => Number(n || 0).toLocaleString("uz-UZ") + " so‘m";
@@ -30,6 +31,9 @@ export default function Home() {
   const [showTop, setShowTop] = useState(false);
 
   const cart = useCart();
+  const place = useLocationStore((s) => s.place);
+  const availability = useLocationStore((s) => s.availability);
+  const setOpenPicker = useLocationStore((s) => s.setOpenPicker);
 
   const sectionRefs = useRef({});
   const catBtnRefs = useRef({});
@@ -214,13 +218,27 @@ export default function Home() {
   const inc = (p) => cart.inc(p.id);
   const dec = (p) => cart.dec(p.id);
 
+  const blocked = !place || (availability?.checked && !availability?.available);
+
   return (
     <section className="page">
       {/* Hero */}
       <HeroCarousel slides={slides} height={360} auto delay={5000} />
 
       {/* Sticky kategoriya chips + indikator */}
-      <nav className="catbar">
+      <nav
+        className="catbar"
+        style={
+          blocked
+            ? {
+                filter: "blur(4px)",
+                pointerEvents: "none",
+                userSelect: "none",
+                opacity: 0.5,
+              }
+            : undefined
+        }
+      >
         <div
           className="catbar__inner no-scrollbar"
           ref={catbarInnerRef}
@@ -254,76 +272,138 @@ export default function Home() {
       </nav>
 
       {/* Seksiyalar */}
-      <div className="container" style={{ display: "grid", gap: 22 }}>
-        {visibleIds.map((catId) => {
-          const cat = cats.find((x) => x.id === catId);
-          const loading = !!loadingMap[catId] && !prodMap[catId]?.length;
-          const list = prodMap[catId] || [];
-
-          return (
-            <section
-              key={catId}
-              id={`cat-${catId}`}
-              data-cat-id={catId}
-              ref={(n) => (sectionRefs.current[catId] = n)}
-              className="cat-section"
+      <div
+        className="container"
+        style={{ display: "grid", gap: 22, position: "relative" }}
+      >
+        {blocked && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 32,
+              textAlign: "center",
+              gap: 16,
+              background:
+                "linear-gradient(to bottom, rgba(10,14,25,0.92), rgba(10,14,25,0.92))",
+              zIndex: 10,
+              borderRadius: 24,
+            }}
+          >
+            <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.3 }}>
+              {place
+                ? lang === "ru"
+                  ? "По этому адресу доставка недоступна. Приносим извинения за неудобства."
+                  : "Ushbu manzilga yetkazib berish mavjud emas. Noqulayliklar uchun uzr so'raymiz."
+                : lang === "ru"
+                ? "Сначала выберите адрес"
+                : "Avval manzilni tanlang"}
+            </div>
+            <div style={{ fontSize: 14, opacity: 0.8 }}>
+              {place
+                ? lang === "ru"
+                  ? "Пожалуйста, попробуйте указать другой адрес поблизости"
+                  : "Iltimos, yaqin atrofdagi boshqa manzilni sinab ko'ring"
+                : t("common:select_address_help")}
+            </div>
+            <button
+              onClick={() => setOpenPicker(true)}
+              style={{
+                background: "var(--primary, #2563eb)",
+                color: "#fff",
+                padding: "12px 22px",
+                borderRadius: 999,
+                fontWeight: 600,
+                border: "none",
+                cursor: "pointer",
+                boxShadow: "0 4px 16px -2px rgba(0,0,0,0.4)",
+              }}
             >
-              <div className="cat-section__head">
-                <h2 className="cat-section__title">
-                  {lang === "ru"
-                    ? cat?.name_ru || cat?.name || t("common:category")
-                    : cat?.name_uz || cat?.name || t("common:category")}
-                </h2>
-              </div>
+              {place
+                ? lang === "ru"
+                  ? "Изменить адрес"
+                  : "Manzilni o'zgartirish"
+                : t("common:select_address_button")}
+            </button>
+          </div>
+        )}
+        {!blocked &&
+          visibleIds.map((catId) => {
+            const cat = cats.find((x) => x.id === catId);
+            const loading = !!loadingMap[catId] && !prodMap[catId]?.length;
+            const list = prodMap[catId] || [];
 
-              <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-                  gap: 14,
-                }}
+            return (
+              <section
+                key={catId}
+                id={`cat-${catId}`}
+                data-cat-id={catId}
+                ref={(n) => (sectionRefs.current[catId] = n)}
+                className="cat-section"
               >
-                {loading
-                  ? Array.from({ length: 8 }).map((_, i) => (
-                      <SkeletonCard key={i} />
-                    ))
-                  : list.map((p) => {
-                      const qty = qtyMap.get(p.id) || 0;
-                      return (
-                        <ProductCard
-                          key={p.id}
-                          product={p}
-                          qty={qty}
-                          lang={lang}
-                          onAdd={() => addToCart(p)}
-                          onInc={() => inc(p)}
-                          onDec={() => dec(p)}
-                          onOpen={() => setChosen(p)}
-                        />
-                      );
-                    })}
-              </div>
-            </section>
-          );
-        })}
+                <div className="cat-section__head">
+                  <h2 className="cat-section__title">
+                    {lang === "ru"
+                      ? cat?.name_ru || cat?.name || t("common:category")
+                      : cat?.name_uz || cat?.name || t("common:category")}
+                  </h2>
+                </div>
+
+                <div
+                  className="grid"
+                  style={{
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(240px, 1fr))",
+                    gap: 14,
+                  }}
+                >
+                  {loading
+                    ? Array.from({ length: 8 }).map((_, i) => (
+                        <SkeletonCard key={i} />
+                      ))
+                    : list.map((p) => {
+                        const qty = qtyMap.get(p.id) || 0;
+                        return (
+                          <ProductCard
+                            key={p.id}
+                            product={p}
+                            qty={qty}
+                            lang={lang}
+                            onAdd={() => addToCart(p)}
+                            onInc={() => inc(p)}
+                            onDec={() => dec(p)}
+                            onOpen={() => setChosen(p)}
+                          />
+                        );
+                      })}
+                </div>
+              </section>
+            );
+          })}
 
         {/* infinite sentinel */}
         <div ref={loadMoreRef} style={{ height: 10 }} />
       </div>
 
       {/* Modal */}
-      <ProductSheet
-        open={!!chosen}
-        product={chosen}
-        onClose={() => setChosen(null)}
-        onAdd={(qty) => {
-          if (chosen) addToCart(chosen, qty);
-          setChosen(null);
-        }}
-      />
+      {!blocked && (
+        <ProductSheet
+          open={!!chosen}
+          product={chosen}
+          onClose={() => setChosen(null)}
+          onAdd={(qty) => {
+            if (chosen) addToCart(chosen, qty);
+            setChosen(null);
+          }}
+        />
+      )}
 
       {/* Tepaga qaytish */}
-      {showTop && (
+      {!blocked && showTop && (
         <button
           className="scrolltop"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

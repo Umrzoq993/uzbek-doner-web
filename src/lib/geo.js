@@ -1,6 +1,11 @@
 const NOMINATIM =
   import.meta.env.VITE_GEO_BASE || "https://nominatim.openstreetmap.org";
-const hdrs = { "Accept-Language": "uz", "Content-Type": "application/json" };
+// Nominatim talablariga ko'ra foydalanuvchi agenti bo'lishi kerak
+const hdrs = {
+  "Accept-Language": "uz",
+  "Content-Type": "application/json",
+  "User-Agent": "UzbekDonerWeb/1.0 (https://uzbekdoner.example)",
+};
 
 export async function reverseGeocode(lat, lon) {
   const url = `${NOMINATIM}/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
@@ -14,11 +19,15 @@ export async function searchGeocode(q) {
   if (!q || q.length < 3) return [];
   const url = `${NOMINATIM}/search?format=json&q=${encodeURIComponent(
     q
-  )}&addressdetails=1&limit=5`;
-  const res = await fetch(url, { headers: hdrs });
-  if (!res.ok) return [];
-  const list = await res.json();
-  return list.map(normalizeFromNominatim);
+  )}&addressdetails=1&limit=8&countrycodes=uz`;
+  try {
+    const res = await fetch(url, { headers: hdrs });
+    if (!res.ok) return [];
+    const list = await res.json();
+    return list.map(normalizeFromNominatim);
+  } catch {
+    return [];
+  }
 }
 
 function normalizeFromNominatim(obj) {

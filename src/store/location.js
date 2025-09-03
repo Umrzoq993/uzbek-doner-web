@@ -13,15 +13,38 @@ export const useLocationStore = create((set, get) => ({
   // {label, lat, lon, city, street, house}
   place: restore(),
   details: { entrance: "", floor: "", apt: "", courierNote: "" },
+  availability: { checked: false, available: false, reason: null, flial: null },
+  openPicker: false,
 
   setPlace: (place) => {
     set({ place });
     localStorage.setItem(key, JSON.stringify(place));
+    // Reset availability so guard re-checks
+    set({
+      availability: {
+        checked: false,
+        available: false,
+        reason: null,
+        flial: null,
+      },
+    });
   },
   clearPlace: () => {
-    set({ place: null });
+    set({
+      place: null,
+      availability: {
+        checked: false,
+        available: false,
+        reason: null,
+        flial: null,
+      },
+    });
     localStorage.removeItem(key);
   },
+  setAvailability: (availability) =>
+    set({ availability: { ...get().availability, ...availability } }),
+
+  setOpenPicker: (v) => set({ openPicker: !!v }),
 
   setDetails: (patch) => set({ details: { ...get().details, ...patch } }),
   resetDetails: () =>

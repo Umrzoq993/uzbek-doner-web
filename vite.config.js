@@ -9,5 +9,10 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     hmr: true,
+    // Allowed hosts (prod domain + optional override)
+    allowedHosts: [
+      "uzbekdoner.adminsite.uz",
+      import.meta?.env?.VITE_ALLOWED_HOST || undefined,
+    ].filter(Boolean),
   },
 });

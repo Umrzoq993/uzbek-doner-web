@@ -98,6 +98,40 @@ export const AuthAPI = {
   },
 };
 
+// ===== Filial / Delivery pricing =====
+export const FlialAPI = {
+  /**
+   * Koordinatalar bo'yicha eng yaqin filial va yetkazib berish narxini aniqlaydi.
+   * @param {number} latitude
+   * @param {number} longitude
+   * @returns {Promise<{status:boolean, flial?:{id:number,name:string,latitude:number,longitude:number}, address?:object, distance?:number, price?:number}>}
+   */
+  async checkPoint({ latitude, longitude }) {
+    // Prod domain; allows override via VITE_TEMP_API_BASE but falls back to main BASE
+    const TEMP_BASE = import.meta.env.VITE_TEMP_API_BASE || BASE;
+    try {
+      await ensureAuthIfNeeded();
+    } catch {
+      /* ignore */
+    }
+    const token = tokenStore.get();
+    const headers = { Accept: "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const url = `${TEMP_BASE}/flials/check_point`;
+    const { data } = await axios.post(
+      url,
+      "", // body bo'sh
+      {
+        params: { latitude, longitude },
+        headers,
+        timeout: 15000,
+        validateStatus: (s) => s < 500,
+      }
+    );
+    return data;
+  },
+};
+
 // ===== Menu =====
 const mapCat = (c) => ({
   id: c.category_id,
@@ -141,9 +175,68 @@ export const MenuAPI = {
 // ===== Order =====
 export const OrderAPI = {
   async create(payload) {
-    const url = import.meta.env.VITE_ORDER_ENDPOINT || "/order/create";
-    const { data } = await http.post(url, payload);
-    return data;
+    const TEMP_BASE = import.meta.env.VITE_TEMP_API_BASE || BASE; // fallback prod baza
+    // Agar avtomatik login sozlangan bo'lsa va token yo'q bo'lsa avval olishga urinib ko'ramiz
+    try {
+      await ensureAuthIfNeeded();
+    } catch {
+      /* ignore auto auth failure */
+    }
+    const token = tokenStore.get();
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    try {
+      // Backendga yuborish
+      const { data } = await axios.post(`${TEMP_BASE}/orders/new`, payload, {
+        timeout: 20000,
+        headers,
+        validateStatus: (s) => s < 500, // 4xx ni ham qaytarib olamiz
+      });
+      if (
+        data?.detail === "Not authenticated" ||
+        data?.detail === "Unauthorized"
+      ) {
+        throw new Error("Avtorizatsiya talab qilinadi (401)");
+      }
+      // Kutilayotgan normalizatsiya:
+      // Kirish formati (backenddan real keladigan turli variantlarga moslash uchun):
+      //  { status: true, message: "Order created successfully", order_id: 123 }
+      //  yoki { success: true, id: 123 }
+      //  yoki { order: { id: 123 }, message: "ok" }
+      const normalized = (() => {
+        if (!data || typeof data !== "object") {
+          return {
+            status: false,
+            message: "Unknown response",
+            order_id: null,
+            raw: data,
+          };
+        }
+        const orderId =
+          data.order_id ||
+          data.id ||
+          data.orderId ||
+          data.order?.id ||
+          data.order?.order_id ||
+          null;
+        const status = Boolean(
+          data.status === true ||
+            data.success === true ||
+            (typeof orderId === "number" && orderId > 0)
+        );
+        const message =
+          data.message ||
+          data.detail ||
+          (status ? "Order created successfully" : "Order create failed");
+        return { status, message, order_id: orderId, raw: data };
+      })();
+      return normalized;
+    } catch (err) {
+      console.error("Order create failed", err);
+      throw err;
+    }
   },
 };
 

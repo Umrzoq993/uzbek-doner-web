@@ -3,6 +3,7 @@ import { useMemo, useEffect, useRef, useState } from "react";
 import { ShoppingCart, ChevronLeft } from "lucide-react";
 import { useCart } from "../store/cart";
 import { useT } from "../i18n/i18n";
+import { useLocationStore } from "../store/location";
 import { useLangStore } from "../store/lang";
 
 export default function AppHeader() {
@@ -11,6 +12,9 @@ export default function AppHeader() {
   const { items } = useCart();
   const t = useT();
   const { lang, setLang } = useLangStore();
+  const place = useLocationStore((s) => s.place);
+  const availability = useLocationStore((s) => s.availability);
+  const setOpenPicker = useLocationStore((s) => s.setOpenPicker);
 
   const count = useMemo(
     () => items.reduce((s, i) => s + (i.qty || 0), 0),
@@ -93,6 +97,28 @@ export default function AppHeader() {
           >
             {lang === "uz" ? "RU" : "UZ"}
           </button>
+
+          {/* Manzil tanlash CTA */}
+          {(!place || !availability?.available) && (
+            <button
+              type="button"
+              onClick={() => setOpenPicker(true)}
+              className="chip"
+              style={{
+                fontSize: 12,
+                marginLeft: 12,
+                background: "var(--primary, #2563eb)",
+                color: "#fff",
+                fontWeight: 600,
+              }}
+            >
+              {place
+                ? lang === "ru"
+                  ? "Адрес недоступен"
+                  : "Manzil noqulay"
+                : t("common:select_address_button")}
+            </button>
+          )}
         </div>
       </header>
 

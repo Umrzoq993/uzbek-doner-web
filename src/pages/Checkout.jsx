@@ -5,21 +5,25 @@ import { useCart } from "../store/cart";
 import { useLocationStore } from "../store/location";
 import { toast } from "react-toastify";
 import { useT, useMoneyFormatter } from "../i18n/i18n";
+import { OrderAPI, FlialAPI } from "../lib/api";
+import ConfirmModal from "../components/ConfirmModal";
+import GeoPicker from "../components/GeoPicker";
 import { useLangStore } from "../store/lang";
 
 /* Helpers */
 // localized money formatting via hook (legacy fmt kept for fallback if needed)
 // legacyFmt removed (use useMoneyFormatter instead)
-const KURYER_FEE = 6900;
+// Dinamik yetkazib berish narxi (filial API dan olinadi)
+const FALLBACK_DELIVERY = 0;
 const API_BASE = import.meta?.env?.VITE_API_BASE || "";
 
-/* Telefon: faqat 9 ta raqam saqlaymiz (prefiks +998 alohida ko‘rsatiladi) */
+/* Telefon: yagona input (mask bilan) +998 prefiksli; faqat 9 ta raqam saqlanadi */
 const onlyDigits = (s = "") => s.replace(/\D+/g, "");
 const clamp9 = (s) => onlyDigits(s).slice(0, 9);
 const toE164 = (nine) => (nine?.length === 9 ? `+998${nine}` : "");
-const prettyNine = (nine = "") => {
+const formatMasked = (nine = "") => {
   const a = nine.padEnd(9, "_");
-  return `+998 (${a.slice(0, 2)})-${a.slice(2, 5)}-${a.slice(5, 7)}-${a.slice(
+  return `+998 (${a.slice(0, 2)}) ${a.slice(2, 5)}-${a.slice(5, 7)}-${a.slice(
     7,
     9
   )}`;
@@ -30,20 +34,64 @@ export default function Checkout() {
   const lang = useLangStore((s) => s.lang);
   const fmtMoney = useMoneyFormatter();
   const nav = useNavigate();
-  const { items /*, clear*/ } = useCart();
+  const { items, clear } = useCart();
   const { place, details, setDetails } = useLocationStore();
+  const [geoOpen, setGeoOpen] = useState(false);
 
-  const [payMethod, setPayMethod] = useState("card"); // 'card' | 'cash'
+  // Hozircha faqat naqd to'lov (cash)
+  // payMethod state removed (only 'cash' supported currently)
   const [phone9, setPhone9] = useState(""); // faqat 9 ta raqam
   const [loading, setLoading] = useState(false);
+  const [deliveryPrice, setDeliveryPrice] = useState(FALLBACK_DELIVERY);
+  const [flialId, setFlialId] = useState(1);
+  const [feeLoading, setFeeLoading] = useState(false);
+  const [branchName, setBranchName] = useState("");
+  const [distanceKm, setDistanceKm] = useState(null);
 
-  // Agar details.phone bo‘lsa, 998 prefiksini olib, 9 ta raqam sifatida qo‘yib olaylik
+  // Manzil o'zgarganda delivery price hisoblash
   useEffect(() => {
-    const preset = onlyDigits(details?.phone || "").replace(/^998/, "");
-    if (preset) setPhone9(clamp9(preset));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const lat = place?.lat;
+    const lon = place?.lon;
+    if (!lat || !lon) return;
+    let cancelled = false;
+    (async () => {
+      setFeeLoading(true);
+      try {
+        const data = await FlialAPI.checkPoint({
+          latitude: lat,
+          longitude: lon,
+        });
+        if (cancelled) return;
+        if (data?.status) {
+          setDeliveryPrice(Number(data?.price || 0));
+          if (data?.flial?.id) setFlialId(data.flial.id);
+          setBranchName(data?.flial?.name || "");
+          setDistanceKm(
+            typeof data?.distance === "number"
+              ? Number(data.distance.toFixed(2))
+              : null
+          );
+        } else {
+          setDeliveryPrice(FALLBACK_DELIVERY);
+          setBranchName("");
+          setDistanceKm(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setDeliveryPrice(FALLBACK_DELIVERY);
+          setBranchName("");
+          setDistanceKm(null);
+        }
+      } finally {
+        if (!cancelled) setFeeLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [place?.lat, place?.lon]);
 
+  // Hisob-kitoblar
   const subtotal = useMemo(
     () => items.reduce((s, i) => s + (i.price || 0) * (i.qty || 0), 0),
     [items]
@@ -52,62 +100,106 @@ export default function Checkout() {
     () => items.reduce((s, i) => s + (i.qty || 0), 0),
     [items]
   );
-  const total = Math.max(0, subtotal + KURYER_FEE);
+  const total = Math.max(0, subtotal + (deliveryPrice || 0));
 
-  const handlePay = async () => {
+  const validPhone = phone9.length === 9;
+  const canSubmit =
+    items.length > 0 &&
+    !loading &&
+    !feeLoading &&
+    Number.isFinite(deliveryPrice) &&
+    deliveryPrice > 0 &&
+    validPhone;
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [skipConfirm, setSkipConfirm] = useState(() => {
+    try {
+      return localStorage.getItem("ud_skip_confirm") === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const submitOrder = async () => {
     if (!items.length) return toast?.error?.(t("checkout:toast_cart_empty"));
     if (!place?.label) return toast?.error?.(t("checkout:toast_need_address"));
+    if (feeLoading)
+      return toast?.error?.(
+        lang === "ru"
+          ? "Цена доставки рассчитывается"
+          : "Yetkazib berish narxi hisoblanmoqda"
+      );
+    if (!deliveryPrice || deliveryPrice <= 0)
+      return toast?.error?.(
+        lang === "ru"
+          ? "Цена доставки не определена"
+          : "Yetkazib berish narxi aniqlanmadi"
+      );
+    if (!validPhone) return toast?.error?.(t("checkout:toast_phone_required"));
 
     const phoneE164 = toE164(phone9);
-    if (payMethod === "card") {
-      if (!phoneE164) return toast?.error?.(t("checkout:toast_phone_required"));
-
-      setLoading(true);
-      try {
-        const res = await fetch(`${API_BASE}/payment/card`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: phoneE164,
-            amount: total,
-            items: items.map((x) => ({
-              id: x.id,
-              name: x.title,
-              price: x.price,
-              qty: x.qty,
-            })),
-            address: {
-              label: place?.label,
-              entrance: details?.entrance || "",
-              floor: details?.floor || "",
-              apt: details?.apt || "",
-              courierNote: details?.courierNote || "",
-            },
-          }),
-        });
-        if (!res.ok) throw new Error("Payment request failed");
-        toast?.success?.(t("checkout:toast_card_sent"));
-        nav("/");
-      } catch {
-        toast?.error?.(t("checkout:toast_card_fail"));
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
-    // Naqd to‘lov
+    // Faqat naqd rejim: buyurtmani yuboramiz
     setLoading(true);
     try {
-      // TODO: naqd buyurtma API
-      await new Promise((r) => setTimeout(r, 500));
-      toast?.success?.(t("checkout:toast_cash_success"));
+      const addressParts = [
+        place?.label || "",
+        details?.entrance ? `Подъезд: ${details.entrance}` : "",
+        details?.floor ? `Этаж: ${details.floor}` : "",
+        details?.apt ? `Кв: ${details.apt}` : "",
+      ].filter(Boolean);
+      const fullAddress = addressParts.join("; ");
+
+      const payload = {
+        source: "web",
+        phone: phoneE164 || "",
+        address: fullAddress,
+        latitude: place?.lat || 0,
+        longitude: place?.lon || 0,
+        delivery_price: deliveryPrice,
+        payment_type: "cash",
+        flial_id: flialId,
+        comment: details?.courierNote || "",
+        details: items.map((it) => ({
+          product_id: it.id,
+          number: it.qty,
+        })),
+      };
+
+      const res = await OrderAPI.create(payload);
+      if (res?.status) {
+        const oid = res?.order_id ? ` #${res.order_id}` : "";
+        toast?.success?.(
+          res?.message || t("checkout:toast_cash_success") + oid
+        );
+      } else {
+        toast?.error?.(res?.message || t("checkout:toast_cash_fail"));
+        setLoading(false);
+        return;
+      }
+      clear();
       nav("/");
     } catch {
       toast?.error?.(t("checkout:toast_cash_fail"));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePay = () => {
+    if (!validPhone) {
+      toast?.error?.(t("checkout:toast_phone_required"));
+      return;
+    }
+    if (skipConfirm) {
+      submitOrder();
+      return;
+    }
+    setConfirmOpen(true);
+  };
+
+  const confirmAndSend = async () => {
+    setConfirmOpen(false);
+    await submitOrder();
   };
 
   return (
@@ -173,8 +265,32 @@ export default function Checkout() {
           {/* Manzil */}
           <div className="checkout-card">
             <h3 className="checkout-card__title">{t("checkout:address")}</h3>
-            <div className="checkout-card__muted" style={{ marginBottom: 10 }}>
-              {place?.label || t("checkout:address_not_selected")}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 10,
+              }}
+            >
+              <div className="checkout-card__muted" style={{ flex: 1 }}>
+                {place?.label || t("checkout:address_not_selected")}
+              </div>
+              <button
+                type="button"
+                className="btn btn--outline"
+                style={{ whiteSpace: "nowrap" }}
+                onClick={() => setGeoOpen(true)}
+              >
+                {place?.label
+                  ? lang === "ru"
+                    ? "Изменить"
+                    : "O'zgartirish"
+                  : lang === "ru"
+                  ? "Выбрать"
+                  : "Tanlash"}
+              </button>
             </div>
             <div className="field-row">
               <input
@@ -208,59 +324,10 @@ export default function Checkout() {
           {/* To'lov usuli */}
           <div className="checkout-card">
             <h3 className="checkout-card__title">{t("checkout:pay_method")}</h3>
-
-            <div className="paytype">
-              <button
-                type="button"
-                className={`radio-card ${
-                  payMethod === "card" ? "is-active" : ""
-                }`}
-                onClick={() => setPayMethod("card")}
-                style={{ color: "var(--fg)" }}
-              >
-                <div>
-                  <div
-                    className="radio-card__title"
-                    style={{ color: "inherit" }}
-                  >
-                    {t("checkout:pay_card")}
-                  </div>
-                  <div
-                    className="radio-card__sub"
-                    style={{ color: "inherit", opacity: 0.75 }}
-                  >
-                    {t("checkout:pay_card_sub")}
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                className={`radio-card ${
-                  payMethod === "cash" ? "is-active" : ""
-                }`}
-                onClick={() => setPayMethod("cash")}
-                style={{ color: "var(--fg)" }}
-              >
-                <div>
-                  <div
-                    className="radio-card__title"
-                    style={{ color: "inherit" }}
-                  >
-                    {t("checkout:pay_cash")}
-                  </div>
-                  <div
-                    className="radio-card__sub"
-                    style={{ color: "inherit", opacity: 0.75 }}
-                  >
-                    {t("checkout:pay_cash_sub")}
-                  </div>
-                </div>
-              </button>
+            <div className="checkout-card__muted" style={{ marginBottom: 8 }}>
+              {t("checkout:pay_cash")} (hozircha faqat naqd)
             </div>
-
-            {/* Telefon — mask yo‘q, prefiks alohida; input faqat 9 ta raqam qabul qiladi */}
-            <div className="field-row" style={{ marginTop: 12 }}>
+            <div className="field-row" style={{ marginTop: 4 }}>
               <div
                 style={{
                   display: "grid",
@@ -282,10 +349,9 @@ export default function Checkout() {
                 >
                   +998
                 </span>
-
                 <input
                   className="field"
-                  style={{ width: "100%" }}
+                  style={{ width: "100%", letterSpacing: 1 }}
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={9}
@@ -296,14 +362,16 @@ export default function Checkout() {
                     setPhone9(v);
                     setDetails({ phone: toE164(v) || "" });
                   }}
+                  aria-label={
+                    lang === "ru" ? "Номер телефона" : "Telefon raqami"
+                  }
                 />
               </div>
-
-              <small className="checkout-card__muted">
-                {payMethod === "card"
-                  ? t("checkout:phone_required")
-                  : t("checkout:phone_optional")}
-                &nbsp; Format: {prettyNine(phone9)}
+              <small
+                className="checkout-card__muted"
+                style={{ color: validPhone ? undefined : "#ff6666" }}
+              >
+                {t("checkout:phone_required")} • {formatMasked(phone9)}
               </small>
             </div>
           </div>
@@ -320,7 +388,26 @@ export default function Checkout() {
                 </div>
                 <div className="summary-row summary-row--muted">
                   <div>{t("checkout:delivery")}</div>
-                  <div>{fmtMoney(KURYER_FEE)}</div>
+                  <div>{feeLoading ? "…" : fmtMoney(deliveryPrice || 0)}</div>
+                </div>
+                <div
+                  className="summary-row summary-row--muted"
+                  style={{
+                    fontSize: 12,
+                    opacity: 0.85,
+                    display: branchName || feeLoading ? "flex" : "none",
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    {feeLoading
+                      ? t("checkout:loading_delivery")
+                      : branchName || t("checkout:delivery_unavailable")}
+                  </div>
+                  <div>
+                    {!feeLoading && distanceKm != null
+                      ? t("checkout:branch_distance_unit", { km: distanceKm })
+                      : ""}
+                  </div>
                 </div>
                 <div className="summary-row summary-row--total">
                   <div>{t("checkout:total")}</div>
@@ -347,17 +434,166 @@ export default function Checkout() {
           </div>
           <button
             className="paybar__btn"
-            disabled={
-              !items.length ||
-              loading ||
-              (payMethod === "card" && phone9.length !== 9)
-            }
+            disabled={!canSubmit}
             onClick={handlePay}
           >
             {loading ? t("checkout:submitting") : t("checkout:submit")}
           </button>
         </div>
       </div>
+      {/* GeoPicker modal */}
+      <GeoPicker open={geoOpen} onClose={() => setGeoOpen(false)} />
+      <ConfirmModal
+        open={confirmOpen}
+        title={t("checkout:confirm_title")}
+        confirmText={lang === "ru" ? "Подтвердить" : "Tasdiqlash"}
+        cancelText={lang === "ru" ? "Отмена" : "Bekor qilish"}
+        onConfirm={confirmAndSend}
+        onCancel={() => setConfirmOpen(false)}
+        loading={loading}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ fontWeight: 600 }}>{t("checkout:confirm_review")}</div>
+          <div
+            style={{
+              fontSize: 12,
+              lineHeight: 1.5,
+              background: "var(--surface-2)",
+              padding: 8,
+              borderRadius: 10,
+              border: "1px solid var(--line)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 8,
+              }}
+            >
+              <strong>{t("checkout:confirm_address")}:</strong>
+              <span style={{ textAlign: "right" }}>{place?.label || "-"}</span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 8,
+                marginTop: 4,
+              }}
+            >
+              <strong>{t("checkout:confirm_phone")}:</strong>
+              <span style={{ textAlign: "right" }}>
+                {details?.phone || formatMasked(phone9)}
+              </span>
+            </div>
+          </div>
+          <div
+            style={{
+              maxHeight: 180,
+              overflow: "auto",
+              border: "1px solid var(--line)",
+              borderRadius: 12,
+              padding: 8,
+            }}
+          >
+            {items.map((it) => {
+              const line = (it.price || 0) * (it.qty || 0);
+              const raw = it.raw || it.product || {};
+              const name =
+                lang === "ru"
+                  ? raw.name_ru || raw.name || it.title || it.name || "Товар"
+                  : raw.name_uz ||
+                    raw.name ||
+                    it.title ||
+                    it.name ||
+                    "Mahsulot";
+              return (
+                <div
+                  key={it.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 13,
+                    padding: "4px 0",
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 500, lineHeight: 1.2 }}>
+                      {name}
+                    </div>
+                    <div style={{ opacity: 0.7 }}>
+                      {it.qty} × {fmtMoney(it.price || 0)}
+                    </div>
+                  </div>
+                  <div style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
+                    {fmtMoney(line)}
+                  </div>
+                </div>
+              );
+            })}
+            {!items.length && (
+              <div style={{ opacity: 0.6, fontSize: 13 }}>
+                {lang === "ru" ? "Корзина пуста" : "Savat bo'sh"}
+              </div>
+            )}
+          </div>
+          <div style={{ fontSize: 13, display: "grid", gap: 4 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>{lang === "ru" ? "Товары" : "Mahsulotlar"}</span>
+              <strong>{fmtMoney(subtotal)}</strong>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>{lang === "ru" ? "Доставка" : "Yetkazib berish"}</span>
+              <strong>{fmtMoney(deliveryPrice)}</strong>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                borderTop: "1px dashed var(--line)",
+                paddingTop: 6,
+                marginTop: 4,
+              }}
+            >
+              <span>{lang === "ru" ? "Итого" : "Jami"}</span>
+              <strong>{fmtMoney(total)}</strong>
+            </div>
+            {branchName && (
+              <div style={{ fontSize: 12, opacity: 0.75 }}>
+                {lang === "ru" ? "Филиал:" : "Filial:"} {branchName}{" "}
+                {distanceKm != null ? `• ${distanceKm} km` : ""}
+              </div>
+            )}
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginTop: 8,
+                cursor: "pointer",
+                fontSize: 12,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={skipConfirm}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  setSkipConfirm(v);
+                  try {
+                    localStorage.setItem("ud_skip_confirm", v ? "1" : "0");
+                  } catch {
+                    /* ignore localStorage */
+                  }
+                }}
+              />
+              {t("checkout:confirm_dont_ask")}
+            </label>
+          </div>
+        </div>
+      </ConfirmModal>
     </div>
   );
 }
