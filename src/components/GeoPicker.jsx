@@ -88,6 +88,24 @@ export default function GeoPicker({ open, onClose }) {
     if (addr) checkAvailability(pos.lat, pos.lon);
   }, [addr, pos.lat, pos.lon, checkAvailability]);
 
+  // Map markazining pos bilan avtomatik sinxronizatsiyasi
+  useEffect(() => {
+    if (!mapRef.current) return;
+    try {
+      const m = mapRef.current;
+      const current = m.getCenter();
+      const target = L.latLng(pos.lat, pos.lon);
+      // distanceTo mavjud bo'lmasa ham xavfsiz
+      const delta = current.distanceTo ? current.distanceTo(target) : 999;
+      if (delta > 5) {
+        // Juda kichik siljishlarda animatsiya qilmaslik uchun threshold
+        m.flyTo([pos.lat, pos.lon], m.getZoom(), { duration: 0.5 });
+      }
+    } catch {
+      /* ignore map sync errors */
+    }
+  }, [pos.lat, pos.lon]);
+
   if (!open) return null;
 
   const confirm = async () => {
@@ -123,11 +141,22 @@ export default function GeoPicker({ open, onClose }) {
       async (p) => {
         const lat = p.coords.latitude,
           lon = p.coords.longitude;
+        // Pozitsiyani yangilaymiz
         setPos({ lat, lon });
+        // Xarita markaziga yumshoq uchish (flyTo)
         try {
-          await reverseGeocode(lat, lon); // trigger cache/update silently
+          if (mapRef.current && typeof mapRef.current.flyTo === "function") {
+            mapRef.current.flyTo([lat, lon], 17, { duration: 1.0 });
+          }
         } catch {
-          /* ignore */
+          /* ignore fly errors */
+        }
+        // Reverse geocode natijasini tezda chiqarish (debounce kutmasdan)
+        try {
+          const a = await reverseGeocode(lat, lon);
+          setAddr(a);
+        } catch {
+          /* ignore reverse geocode */
         }
       },
       (err) => {

@@ -60,27 +60,46 @@ export default function DeliveryGuard({ onForceGeo }) {
   if (!place) return null;
   if (!availability.checked || availability.available) return null;
 
+  const isError = availability.reason === "error";
+  const bodyText = isError
+    ? t("checkout:delivery_error_body") ||
+      "Server bilan aloqa vaqtida xatolik. Iltimos birozdan so'ng qayta urinib ko'ring."
+    : t("checkout:delivery_unavailable_body");
+  const titleText = isError
+    ? t("checkout:delivery_error_title") || "Xatolik"
+    : t("checkout:delivery_unavailable_title");
+
   return (
     <div className="modal-backdrop" style={{ zIndex: 1000 }}>
       <div className="sheet" style={{ maxWidth: 420 }}>
         <div className="sheet__head">
-          <div className="sheet__title">
-            {t("checkout:delivery_unavailable_title")}
-          </div>
+          <div className="sheet__title">{titleText}</div>
         </div>
         <div className="sheet__body" style={{ fontSize: 14, lineHeight: 1.5 }}>
-          {t("checkout:delivery_unavailable_body")}
-          <div style={{ marginTop: 12, fontSize: 12, opacity: 0.7 }}>
-            {place?.label}
-          </div>
+          {bodyText}
+          {place?.label && (
+            <div style={{ marginTop: 12, fontSize: 12, opacity: 0.7 }}>
+              {place?.label}
+            </div>
+          )}
         </div>
         <div
           className="sheet__foot"
           style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}
         >
-          <button className="btn btn--primary" onClick={onForceGeo}>
-            {t("checkout:delivery_unavailable_change")}
-          </button>
+          {!isError && (
+            <button className="btn btn--primary" onClick={onForceGeo}>
+              {t("checkout:delivery_unavailable_change")}
+            </button>
+          )}
+          {isError && (
+            <button
+              className="btn btn--primary"
+              onClick={() => window.location.reload()}
+            >
+              {t("common:retry") || "Qayta urinish"}
+            </button>
+          )}
         </div>
       </div>
     </div>

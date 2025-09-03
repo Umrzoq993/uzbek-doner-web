@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import Button from "./ui/Button";
+import { useCart } from "../store/cart";
 import noImage from "../assets/no-image.png";
 
 const fmt = (n) =>
@@ -9,6 +10,19 @@ const fmt = (n) =>
 
 export default function ProductCard({ product, onAdd, onOpen }) {
   const [imgSrc, setImgSrc] = useState(product.imageUrl || noImage);
+  const { items, add, inc, dec } = useCart();
+
+  // Derive cart item (simple id match like store's idOf logic subset)
+  const pid =
+    product?.id ||
+    product?._id ||
+    product?.product_id ||
+    product?.iiko_product_id ||
+    product?.sku ||
+    product?.slug ||
+    product?.code ||
+    product?.uuid;
+  const cartItem = items.find((x) => x.id === pid);
 
   const discounted = Number(product.discount || 0) > 0;
   const oldPrice = product.oldPrice;
@@ -90,17 +104,51 @@ export default function ProductCard({ product, onAdd, onOpen }) {
               </div>
             )}
           </div>
-          <Button
-            className="btn--primary"
-            onClick={(e) => {
-              e.stopPropagation();
-              e.currentTarget.classList.add("is-pop");
-              setTimeout(() => e.currentTarget.classList.remove("is-pop"), 180);
-              onAdd();
-            }}
-          >
-            Qo‘shish
-          </Button>
+          {!cartItem && (
+            <Button
+              className="btn--primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.currentTarget.classList.add("is-pop");
+                setTimeout(
+                  () => e.currentTarget.classList.remove("is-pop"),
+                  180
+                );
+                onAdd ? onAdd() : add(product, 1);
+              }}
+            >
+              Qo‘shish
+            </Button>
+          )}
+          {cartItem && (
+            <div
+              className="qty-chip qty-chip--lg"
+              onClick={(e) => e.stopPropagation()}
+              aria-label="Miqdor"
+            >
+              <button
+                className="qty-chip__btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dec(pid);
+                }}
+                aria-label="Kamaytirish"
+              >
+                −
+              </button>
+              <div className="qty-chip__num">{cartItem.qty || 0}</div>
+              <button
+                className="qty-chip__btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  inc(pid);
+                }}
+                aria-label="Ko‘paytirish"
+              >
+                +
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

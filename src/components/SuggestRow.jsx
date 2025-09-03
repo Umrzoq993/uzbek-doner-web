@@ -48,7 +48,7 @@ export default function SuggestRow({ categoryId, limit = 6 }) {
     <section className="suggest">
       <div className="suggest__head">
         <h3 className="suggest__title">
-          {lang === "ru" ? "Ничего не забыли?" : "Nimadir esdan chiqmadimi?"}
+          {lang === "ru" ? "Рекомендуем" : "Tavsiya etamiz"}
         </h3>
       </div>
 

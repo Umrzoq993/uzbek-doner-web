@@ -15,6 +15,7 @@ export default function AppHeader() {
   const place = useLocationStore((s) => s.place);
   const availability = useLocationStore((s) => s.availability);
   const setOpenPicker = useLocationStore((s) => s.setOpenPicker);
+  const clearPlace = useLocationStore((s) => s.clearPlace);
 
   const count = useMemo(
     () => items.reduce((s, i) => s + (i.qty || 0), 0),
@@ -98,8 +99,30 @@ export default function AppHeader() {
             {lang === "uz" ? "RU" : "UZ"}
           </button>
 
-          {/* Manzil tanlash CTA */}
-          {(!place || !availability?.available) && (
+          {/* Manzil ko'rsatish / o'zgartirish */}
+          {place && availability?.available ? (
+            <div className="header-loc" style={{ marginLeft: 14 }}>
+              <button
+                type="button"
+                onClick={() => setOpenPicker(true)}
+                className="header-loc__btn"
+                aria-label="Manzilni o'zgartirish"
+                title={place.label}
+              >
+                <span className="header-loc__pin" aria-hidden>
+                  📍
+                </span>
+                <span className="header-loc__text">
+                  {place.street ||
+                    place.label ||
+                    (lang === "ru" ? "Адрес" : "Manzil")}
+                </span>
+                <span className="header-loc__change">
+                  {lang === "ru" ? "Изм." : "O'zgartirish"}
+                </span>
+              </button>
+            </div>
+          ) : (
             <button
               type="button"
               onClick={() => setOpenPicker(true)}

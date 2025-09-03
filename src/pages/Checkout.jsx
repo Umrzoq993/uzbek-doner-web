@@ -434,10 +434,11 @@ export default function Checkout() {
           </div>
           <button
             className="paybar__btn"
-            disabled={!canSubmit}
-            onClick={handlePay}
+            disabled
+            onClick={(e) => e.preventDefault()}
+            title={lang === "ru" ? "Tez orada" : "Tez orada"}
           >
-            {loading ? t("checkout:submitting") : t("checkout:submit")}
+            {lang === "ru" ? "Скоро" : "Tez orada"}
           </button>
         </div>
       </div>

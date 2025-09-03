@@ -1,10 +1,11 @@
 // src/pages/Cart.jsx
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useMoneyFormatter, useT } from "../i18n/i18n";
 import { useLangStore } from "../store/lang";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../store/cart";
-import SuggestRow from "../components/SuggestRow";
+import { useLocationStore } from "../store/location";
+import { FlialAPI } from "../lib/api";
 
 /* --- helpers (legacy formatter removed; use hook instead) --- */
 
@@ -14,6 +15,38 @@ export default function Cart() {
   const lang = useLangStore((s) => s.lang);
   const fmtMoney = useMoneyFormatter();
   const { items, inc, dec, remove, clear } = useCart();
+  const { place } = useLocationStore();
+  const [deliveryPrice, setDeliveryPrice] = useState(0);
+  const [feeLoading, setFeeLoading] = useState(false);
+
+  useEffect(() => {
+    const lat = place?.lat;
+    const lon = place?.lon;
+    if (!lat || !lon) return;
+    let cancelled = false;
+    (async () => {
+      setFeeLoading(true);
+      try {
+        const data = await FlialAPI.checkPoint({
+          latitude: lat,
+          longitude: lon,
+        });
+        if (cancelled) return;
+        if (data?.status) {
+          setDeliveryPrice(Number(data?.price || 0));
+        } else {
+          setDeliveryPrice(0);
+        }
+      } catch {
+        if (!cancelled) setDeliveryPrice(0);
+      } finally {
+        if (!cancelled) setFeeLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [place?.lat, place?.lon]);
 
   const subtotal = useMemo(
     () => items.reduce((s, it) => s + (it.price || 0) * (it.qty || 0), 0),
@@ -24,20 +57,12 @@ export default function Cart() {
     [items]
   );
   const disablePay = !items.length || totalQty <= 0 || subtotal <= 0;
+  const total = useMemo(
+    () => Math.max(0, subtotal + (deliveryPrice || 0)),
+    [subtotal, deliveryPrice]
+  );
 
   // Savatdagi birinchi mavjud kategoriya (fallback: 49)
-  const suggestCategoryId = useMemo(() => {
-    for (const it of items) {
-      const cid =
-        it?.raw?.category?.category_id ??
-        it?.category?.category_id ??
-        it?.category_id ??
-        it?.raw?.category_id ??
-        null;
-      if (cid != null) return Number(cid);
-    }
-    return 49; // default Uzbek Doner
-  }, [items]);
 
   const goCheckout = () => {
     if (disablePay) return;
@@ -45,10 +70,10 @@ export default function Cart() {
   };
 
   return (
-    <div className="page has-paybar">
-      <div className="container">
-        {/* SAVAT */}
-        <div className="checkout-card">
+    <div className="page page--cart">
+      <div className="container cart-sections">
+        {/* 1. Mahsulotlar ro'yxati + jami */}
+        <div className="cart-card cart-card--items">
           <div
             style={{
               display: "flex",
@@ -64,7 +89,12 @@ export default function Cart() {
               <button
                 className="btn btn--ghost"
                 onClick={clear}
-                aria-label="Savatchani tozalash"
+                aria-label={
+                  lang === "ru" ? "Очистить корзину" : "Savatchani tozalash"
+                }
+                title={
+                  lang === "ru" ? "Очистить корзину" : "Savatchani tozalash"
+                }
               >
                 {lang === "ru" ? "Очистить" : "Tozalash"}
               </button>
@@ -115,45 +145,80 @@ export default function Cart() {
                   </div>
 
                   <button
-                    className="btn btn--subtle-danger"
+                    className="btn btn--subtle-danger btn--icon"
                     onClick={() => remove(it.id)}
                     aria-label={lang === "ru" ? "Удалить" : "O‘chirish"}
                     title={lang === "ru" ? "Удалить" : "O‘chirish"}
                   >
-                    {lang === "ru" ? "Удалить" : "O‘chirish"}
+                    <span className="icon" aria-hidden>
+                      🗑
+                    </span>
                   </button>
                 </div>
               </div>
             );
           })}
+          {!!items.length && (
+            <div className="cart-total-inline has-fee">
+              <div className="cart-fee-row">
+                <span className="cart-total-inline__label">
+                  {lang === "ru" ? "Доставка" : "Yetkazib berish"}
+                </span>
+                <span className="cart-fee-row__val">
+                  {feeLoading
+                    ? "…"
+                    : deliveryPrice > 0
+                    ? fmtMoney(deliveryPrice)
+                    : lang === "ru"
+                    ? "—"
+                    : "—"}
+                </span>
+              </div>
+              <div className="cart-total-sep" aria-hidden />
+              <div className="cart-sum-row">
+                <span className="cart-total-inline__label">
+                  {lang === "ru" ? "Итого" : "Jami"}
+                </span>
+                <span className="cart-total-inline__val">
+                  {fmtMoney(total)}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* SUGGESTIONS — mavjud komponentdan foydalanyapmiz */}
-        <SuggestRow categoryId={suggestCategoryId} limit={6} />
-
-        {/* “Menyuga qaytish” havolasi (ixtiyoriy) */}
-        <div style={{ marginTop: 12 }}>
-          <Link to="/" className="btn">
-            {lang === "ru" ? "Назад в меню" : "Menyuga qaytish"}
+        {/* 3. Menyuga qaytish card */}
+        <div className="cart-card cart-card--return">
+          <Link to="/" className="cart-return-link">
+            <span className="cart-return-link__icon" aria-hidden>
+              ←
+            </span>
+            <span className="cart-return-link__text">
+              {lang === "ru" ? "Назад в меню" : "Menyuga qaytish"}
+            </span>
           </Link>
         </div>
-      </div>
 
-      {/* PAYBAR */}
-      <div className="paybar">
-        <div className="paybar__inner">
-          <div style={{ fontWeight: 800 }}>
-            {lang === "ru" ? "Итого" : "Jami"}:&nbsp; {fmtMoney(subtotal)}
+        {/* 4. To'lov card */}
+        {!!items.length && (
+          <div className="cart-card cart-card--pay">
+            <div className="cart-pay-head">
+              <div className="cart-pay-head__title">
+                {lang === "ru" ? "Оформление" : "To'lov"}
+              </div>
+            </div>
+            <button
+              className="cart-pay-action"
+              disabled
+              onClick={(e) => e.preventDefault()}
+              title={lang === "ru" ? "Скоро" : "Tez orada"}
+            >
+              {lang === "ru" ? "Скоро" : "Tez orada"}
+            </button>
           </div>
-          <button
-            className="paybar__btn"
-            disabled={disablePay}
-            onClick={goCheckout}
-          >
-            {lang === "ru" ? "Перейти к оплате" : "To‘lovga o‘tish"}
-          </button>
-        </div>
+        )}
       </div>
+      {/* Sticky paybar removed */}
     </div>
   );
 }
