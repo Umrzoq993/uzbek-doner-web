@@ -15,7 +15,9 @@ export const useLangStore = create((set) => ({
   setLang: (lang) => {
     try {
       localStorage.setItem("lang", lang);
-    } catch {}
+    } catch {
+      // ignore write errors (private mode etc.)
+    }
     set({ lang });
   },
 }));

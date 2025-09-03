@@ -1,6 +1,4 @@
-import noImage from "../assets/no-image.png";
-
-export default function CatTabs({ categories, activeId, onChange }) {
+export default function CatTabs({ categories = [], activeId, onChange }) {
   return (
     <nav className="tabs">
       {categories.map((c) => (

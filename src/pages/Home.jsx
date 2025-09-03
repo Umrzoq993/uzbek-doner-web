@@ -17,7 +17,7 @@ const STICKY_OFFSET = 90;
 export default function Home() {
   const t = useT();
   const lang = useLangStore((s) => s.lang);
-  const fmtMoney = useMoneyFormatter();
+  useMoneyFormatter(); // ensure money formatter initialized
   const [cats, setCats] = useState([]);
   const [visibleIds, setVisibleIds] = useState([]);
   const nextIndexRef = useRef(0);

@@ -1,5 +1,6 @@
 import Img from "./Img";
 import { useLangStore } from "../store/lang";
+import { useMoneyFormatter } from "../i18n/i18n";
 export default function ProductSmallCard({ product, onAdd }) {
   const lang = useLangStore((s) => s.lang);
   const name =

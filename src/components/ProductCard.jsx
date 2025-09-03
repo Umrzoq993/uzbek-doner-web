@@ -1,11 +1,26 @@
-function ProductCard({ product, onAdd, onOpen }) {
+import { useState, useMemo } from "react";
+import Button from "./ui/Button";
+import noImage from "../assets/no-image.png";
+
+const fmt = (n) =>
+  new Intl.NumberFormat("uz-UZ", { maximumFractionDigits: 0 }).format(
+    Number(n || 0)
+  ) + " so‘m";
+
+export default function ProductCard({ product, onAdd, onOpen }) {
   const [imgSrc, setImgSrc] = useState(product.imageUrl || noImage);
 
   const discounted = Number(product.discount || 0) > 0;
   const oldPrice = product.oldPrice;
-  const unitPrice = discounted
-    ? Math.round(Number(product.price) * (1 - Number(product.discount) / 100))
-    : Number(product.price);
+  const unitPrice = useMemo(
+    () =>
+      discounted
+        ? Math.round(
+            Number(product.price) * (1 - Number(product.discount) / 100)
+          )
+        : Number(product.price),
+    [discounted, product.price, product.discount]
+  );
 
   return (
     <div

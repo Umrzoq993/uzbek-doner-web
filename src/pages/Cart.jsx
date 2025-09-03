@@ -6,8 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../store/cart";
 import SuggestRow from "../components/SuggestRow";
 
-/* --- helpers --- */
-const legacyFmt = (n) => `${Number(n || 0).toLocaleString("uz-UZ")} so‘m`;
+/* --- helpers (legacy formatter removed; use hook instead) --- */
 
 export default function Cart() {
   const nav = useNavigate();

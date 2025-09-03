@@ -9,7 +9,7 @@ import { useLangStore } from "../store/lang";
 
 /* Helpers */
 // localized money formatting via hook (legacy fmt kept for fallback if needed)
-const legacyFmt = (n) => `${Number(n || 0).toLocaleString("uz-UZ")} so‘m`;
+// legacyFmt removed (use useMoneyFormatter instead)
 const KURYER_FEE = 6900;
 const API_BASE = import.meta?.env?.VITE_API_BASE || "";
 

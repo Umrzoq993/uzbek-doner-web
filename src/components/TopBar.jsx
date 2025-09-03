@@ -1,6 +1,7 @@
 // src/components/TopBar.jsx
 import { useLocation, useNavigate } from "react-router-dom";
 import { useMemo } from "react";
+import { useT } from "../i18n/i18n";
 
 export default function TopBar() {
   const { pathname } = useLocation();
@@ -11,7 +12,7 @@ export default function TopBar() {
     if (pathname === "/cart") return { title: t("common:cart") };
     if (pathname === "/checkout") return { title: "To‘lov" };
     return null;
-  }, [pathname]);
+  }, [pathname, t]);
 
   if (!meta) return null;
 
@@ -26,7 +27,6 @@ export default function TopBar() {
       </button>
       <div className="topbar__title">{meta.title}</div>
       <div className="topbar__right" />
-      import {useT} from "../i18n/i18n";
     </div>
   );
 }

@@ -1,5 +1,5 @@
 // src/components/HeroCarousel.jsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 export default function HeroCarousel({
   slides = [],
@@ -10,14 +10,17 @@ export default function HeroCarousel({
   const [i, setI] = useState(0);
   const timer = useRef(null);
 
-  const go = (n) => setI((p) => (n + slides.length) % slides.length);
-  const next = () => go(i + 1);
+  const go = useCallback(
+    (n) => setI(() => (n + slides.length) % slides.length),
+    [slides.length]
+  );
+  const next = useCallback(() => go(i + 1), [go, i]);
 
   useEffect(() => {
     if (!auto || slides.length < 2) return;
     timer.current = setTimeout(next, delay);
     return () => clearTimeout(timer.current);
-  }, [i, auto, delay, slides.length]);
+  }, [i, auto, delay, slides.length, next]);
 
   if (!slides.length) return null;
 

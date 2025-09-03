@@ -3,7 +3,6 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 /* ---------- Normalizatorlar (APIga mos) ---------- */
-const text = (v) => (v == null ? "" : String(v));
 
 const idOf = (it) =>
   it?.id ??

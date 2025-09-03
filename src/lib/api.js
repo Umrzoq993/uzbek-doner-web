@@ -68,8 +68,8 @@ http.interceptors.response.use(
         const t = tokenStore.get();
         if (t) cfg.headers.Authorization = `Bearer ${t}`;
         return http(cfg);
-      } catch (e) {
-        /* qayta sinash ham yiqilsa — pastda xabar beramiz */
+      } catch {
+        // retry failed; proceed to error handler
       }
     }
 

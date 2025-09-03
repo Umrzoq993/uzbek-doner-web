@@ -39,7 +39,7 @@ export default function GeoPicker({ open, onClose }) {
 
   useEffect(() => {
     if (open && saved) setPos(saved);
-  }, [open]);
+  }, [open, saved]);
 
   useEffect(() => {
     const t = setTimeout(async () => {
@@ -49,7 +49,9 @@ export default function GeoPicker({ open, onClose }) {
       }
       try {
         setSuggests(await searchGeocode(query));
-      } catch {}
+      } catch {
+        // ignore search errors
+      }
     }, 400);
     return () => clearTimeout(t);
   }, [query]);
@@ -83,7 +85,9 @@ export default function GeoPicker({ open, onClose }) {
         setPos({ lat, lon });
         try {
           setSuggests([await reverseGeocode(lat, lon)]);
-        } catch {}
+        } catch {
+          // ignore reverse geocode errors
+        }
       },
       (err) => {
         toastError(err.message || "Geolokatsiya xatosi");

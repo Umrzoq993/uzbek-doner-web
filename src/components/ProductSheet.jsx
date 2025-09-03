@@ -4,8 +4,7 @@ import { useLangStore } from "../store/lang";
 import { useCart } from "../store/cart";
 import Img from "./Img";
 
-// Helper format (replaced by hook inside component but kept fallback for non-hook usage)
-const fallbackFmt = (n) => `${Number(n || 0).toLocaleString("uz-UZ")} so‘m`;
+// (legacy formatter removed; use useMoneyFormatter hook instead)
 
 const titleOf = (p) =>
   p?.title || p?.name || p?.name_uz || p?.name_ru || p?.product?.name || "";

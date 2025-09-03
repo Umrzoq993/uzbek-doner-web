@@ -12,7 +12,7 @@ export default function SuggestRow({ categoryId, limit = 6 }) {
   const [loading, setLoading] = useState(true);
   const lang = useLangStore((s) => s.lang);
   const fmtMoney = useMoneyFormatter();
-  const t = useT();
+  useT(); // ensure i18n namespace loaded (no variable needed)
 
   // null bo‘lsa ham komponent “jim” ishlasin
   const cid = useMemo(() => categoryId ?? null, [categoryId]);

@@ -4,7 +4,7 @@ import { useLangStore } from "../store/lang";
 import { useCart } from "../store/cart";
 
 export default function PayBar({ label, amount = 0, onClick, showItems }) {
-  const t = useT();
+  useT(); // hook for possible future translations (avoids unused var)
   const lang = useLangStore((s) => s.lang);
   const fmtMoney = useMoneyFormatter();
   const { items } = useCart();
