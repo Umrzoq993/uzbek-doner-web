@@ -1564,7 +1564,10 @@ body {
 .scrolltop {
   position: fixed;
   right: 18px;
-  bottom: 18px;
+  /* cart-fab bilan bir xil vertikal daraja */
+  bottom: calc(
+    var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px)
+  );
   z-index: 70;
   width: 46px;
   height: 46px;
@@ -1581,12 +1584,23 @@ body {
     @include focus-ring;
   }
 }
+/* Agar cart-fab mavjud bo'lsa desktopda scrolltop yuqoriroq chiqadi (yangi brauzerlar) */
+@supports selector(body:has(.cart-fab)) {
+  body:has(.cart-fab) .scrolltop {
+    /* faqat gorizontal surish */
+    right: calc(var(--fab-gap) + var(--fab-size) + var(--fab-pair-gap));
+  }
+}
+/* Fallback (katta ekran) */
+@media (min-width: 1024px) {
+  .scrolltop.has-fab-offset {
+    right: calc(var(--fab-gap) + var(--fab-size) + var(--fab-pair-gap));
+  }
+}
 @include down(md) {
   .scrolltop {
-    right: calc(var(--fab-gap) + var(--fab-size) + 12px);
-    bottom: calc(
-      var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px)
-    );
+    /* Mobil: cart-fab o'ngda, scrolltop chapida */
+    right: calc(var(--fab-gap) + var(--fab-size) + var(--fab-pair-gap));
   }
 }
 
@@ -1853,27 +1867,71 @@ body {
     place-items: center;
     border: 0;
     border-radius: 999px;
-    background: transparent;
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.02)
+    );
     color: var(--fg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(4px) saturate(140%);
+    -webkit-backdrop-filter: blur(4px) saturate(140%);
     font-size: 20px;
     font-weight: 900;
     line-height: 1;
     cursor: pointer;
-    transition: background 0.18s ease, transform 0.12s ease;
-    &:hover {
-      background: rgba(255, 255, 255, 0.04);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.25s ease, box-shadow 0.25s ease,
+      transform 0.12s ease, border-color 0.25s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.28),
+      0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+    &:before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        circle at 50% 50%,
+        rgba(255, 255, 255, 0.18),
+        rgba(255, 255, 255, 0) 70%
+      );
+      opacity: 0;
+      transition: opacity 0.35s ease;
+      pointer-events: none;
     }
-    &:active {
-      transform: translateY(1px);
+    &:hover:not(:disabled) {
+      background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.14),
+        rgba(255, 255, 255, 0.05)
+      );
+      border-color: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.32),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+      &:before {
+        opacity: 1;
+      }
+    }
+    &:active:not(:disabled) {
+      transform: translateY(1px) scale(0.94);
+      background: linear-gradient(
+        160deg,
+        rgba(255, 255, 255, 0.22),
+        rgba(255, 255, 255, 0.08)
+      );
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.07) inset;
     }
     &:focus-visible {
       @include focus-ring;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5),
+        0 0 0 5px rgba(124, 58, 237, 0.45);
     }
   }
   &__num {
     text-align: center;
     font-weight: 900;
-    font-size: 14px;
+    font-size: 16px; /* increased from 14px */
     user-select: none;
     &.is-pop {
       animation: qty-pop 220ms ease-out;
@@ -1888,35 +1946,58 @@ body {
     }
   }
 }
-/* Larger variant for main product cards */
+/* Larger variant for main product cards (updated bigger) */
 .qty-chip--lg {
-  grid-template-columns: 48px 1fr 48px;
-  height: 48px;
+  grid-template-columns: 56px 1fr 56px;
+  height: 56px;
   background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
-  box-shadow: 0 10px 22px rgba(124, 58, 237, 0.28);
+  box-shadow: 0 12px 26px rgba(124, 58, 237, 0.33);
   .qty-chip__num {
-    font-size: 16px;
+    font-size: 20px; /* was 18px */
     color: #fff;
   }
   .qty-chip__btn {
-    width: 48px;
-    height: 42px;
-    font-size: 26px;
+    width: 56px;
+    height: 48px;
+    font-size: 30px;
     color: #fff;
-    background: rgba(255, 255, 255, 0.12);
-    &:hover {
-      background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.14);
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.22);
     }
   }
-  @media (max-width: 480px) {
-    grid-template-columns: 44px 1fr 44px;
-    height: 44px;
+  @media (max-width: 560px) {
+    grid-template-columns: 50px 1fr 50px;
+    height: 50px;
     .qty-chip__btn {
-      width: 44px;
-      height: 38px;
+      width: 50px;
+      height: 44px;
+      font-size: 26px;
+    }
+    .qty-chip__num {
+      font-size: 18px; /* was 16px */
+    }
+  }
+  @media (max-width: 420px) {
+    grid-template-columns: 46px 1fr 46px;
+    height: 46px;
+    .qty-chip__btn {
+      width: 46px;
+      height: 40px;
       font-size: 24px;
     }
+    .qty-chip__num {
+      font-size: 17px; /* was 15px */
+    }
   }
+}
+
+/* Disabled state for qty buttons */
+.qty-chip__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.1) !important;
+  transform: none !important;
 }
 
 /* shimmer + a11y */
@@ -1927,6 +2008,68 @@ body {
 }
 .skeleton {
   @include shimmer-bg;
+}
+
+/* QtyControl extra animations */
+@keyframes qty-enter {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes qty-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.qty-chip.is-enter {
+  animation: qty-enter 360ms cubic-bezier(0.34, 1.4, 0.4, 1);
+}
+.qty-chip__num.is-pulse {
+  animation: qty-pulse 260ms ease-out;
+}
+
+/* Ripple effect */
+.qty-chip__btn {
+  position: relative;
+  overflow: hidden;
+}
+.qty-ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.35);
+  transform: scale(0);
+  animation: qty-ripple 480ms ease-out;
+  mix-blend-mode: screen;
+}
+@keyframes qty-ripple {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* Transition from Add button to chip */
+.add-btn-transition {
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+.add-btn-transition:active {
+  transform: scale(0.92);
 }
 .skeleton-line {
   height: 10px;
@@ -1963,11 +2106,14 @@ body {
     transform: scale(1.07);
   }
 }
+.cart-fab,
 .cart-fab-mobile {
+  /* mobile legacy alias */
   position: fixed;
   right: var(--fab-gap);
   bottom: calc(
-    var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px)
+    var(--paybar-h) + var(--fab-gap) + var(--fab-lift, 0px) +
+      env(safe-area-inset-bottom, 0px)
   );
   z-index: var(--z-fab);
   width: var(--fab-size);
@@ -1992,6 +2138,23 @@ body {
     font-size: 12px;
     padding: 2px 6px;
     box-shadow: 0 6px 16px rgba(255, 77, 79, 0.35);
+  }
+}
+
+/* Mobil (md dan past) da lift olib tashlanadi — scrolltop bilan bir chiziqda */
+@include down(md) {
+  .cart-fab {
+    bottom: calc(
+      var(--paybar-h) + var(--fab-gap) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
+/* Expand spacing on large screens (desktop) */
+@media (min-width: 1024px) {
+  .cart-fab {
+    right: 32px;
+    bottom: calc(var(--fab-gap) + var(--fab-lift, 0px) + 10px);
   }
 }
 

@@ -41,6 +41,8 @@
   /* FAB placement */
   --fab-size: 56px;
   --fab-gap: 18px;
+  --fab-lift: 56px; /* Savatni yuqoriroq ko'tarish (desktop+mobile) */
+  --fab-pair-gap: 22px; /* cart-fab va scrolltop orasidagi bo'shliq */
 
   /* Catbar chips (contrast) */
   --chip-fg: #cfe1ff;

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import Button from "./ui/Button";
 import { useCart } from "../store/cart";
+import QtyControl from "./QtyControl";
 import noImage from "../assets/no-image.png";
 
 const fmt = (n) =>
@@ -104,51 +105,14 @@ export default function ProductCard({ product, onAdd, onOpen }) {
               </div>
             )}
           </div>
-          {!cartItem && (
-            <Button
-              className="btn--primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.currentTarget.classList.add("is-pop");
-                setTimeout(
-                  () => e.currentTarget.classList.remove("is-pop"),
-                  180
-                );
-                onAdd ? onAdd() : add(product, 1);
-              }}
-            >
-              Qo‘shish
-            </Button>
-          )}
-          {cartItem && (
-            <div
-              className="qty-chip qty-chip--lg"
-              onClick={(e) => e.stopPropagation()}
-              aria-label="Miqdor"
-            >
-              <button
-                className="qty-chip__btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  dec(pid);
-                }}
-                aria-label="Kamaytirish"
-              >
-                −
-              </button>
-              <div className="qty-chip__num">{cartItem.qty || 0}</div>
-              <button
-                className="qty-chip__btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  inc(pid);
-                }}
-                aria-label="Ko‘paytirish"
-              >
-                +
-              </button>
-            </div>
-          )}
+          <QtyControl
+            value={cartItem?.qty || 0}
+            variant="lg"
+            onAdd={() => (onAdd ? onAdd() : add(product, 1))}
+            onInc={() => inc(pid)}
+            onDec={() => dec(pid)}
+            addLabel="Qo‘shish"
+          />
         </div>
       </div>
     </div>

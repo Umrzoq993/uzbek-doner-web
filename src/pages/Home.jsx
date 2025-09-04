@@ -418,6 +418,8 @@ export default function Home() {
 
 /* --- Ichki komponentlar --- */
 
+import QtyControl from "../components/QtyControl";
+
 function ProductCard({ product, qty, onAdd, onInc, onDec, onOpen, lang }) {
   const t = useT();
   const fmtMoney = useMoneyFormatter();
@@ -458,43 +460,14 @@ function ProductCard({ product, qty, onAdd, onInc, onDec, onOpen, lang }) {
             {fmtMoney(product.price || 0)}
           </div>
 
-          {hasQty ? (
-            <div className="qty-chip" onClick={(e) => e.stopPropagation()}>
-              <button
-                className="qty-chip__btn"
-                aria-label={t("common:decrease")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDec();
-                }}
-              >
-                −
-              </button>
-              <div ref={numRef} className="qty-chip__num" aria-live="polite">
-                {qty}
-              </div>
-              <button
-                className="qty-chip__btn"
-                aria-label={t("common:increase")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onInc();
-                }}
-              >
-                +
-              </button>
-            </div>
-          ) : (
-            <Button
-              className="btn--primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAdd();
-              }}
-            >
-              {t("common:add")}
-            </Button>
-          )}
+          <QtyControl
+            value={qty}
+            variant="sm"
+            onAdd={() => onAdd()}
+            onInc={() => onInc()}
+            onDec={() => onDec()}
+            addLabel={t("common:add")}
+          />
         </div>
       </div>
     </div>

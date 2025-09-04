@@ -73,21 +73,7 @@ export default function AppHeader() {
             />
           </button>
 
-          <Link
-            to="/cart"
-            className="cart-ind cart-ind--lg hide-on-mobile"
-            aria-label={t("common:cart")}
-          >
-            <span className="cart-ind__icon">
-              <ShoppingCart size={28} strokeWidth={2.25} />
-            </span>
-            <span className="cart-ind__label">{t("common:cart")}</span>
-            {count > 0 && (
-              <span className={`cart-ind__badge ${bump ? "is-bump" : ""}`}>
-                {count}
-              </span>
-            )}
-          </Link>
+          {/* Cart button header varianti olib tashlandi – endi har doim floating FAB */}
 
           <button
             type="button"
@@ -145,15 +131,15 @@ export default function AppHeader() {
         </div>
       </header>
 
-      {/* Mobil uchun FAB — checkout/cart sahifalarida ko'rsatilmaydi */}
+      {/* Mobil + Desktop FAB lar — checkout/cart sahifalarida ko'rsatilmaydi */}
       {!hideFab && (
-        <Link
-          to="/cart"
-          className="cart-fab-mobile show-on-mobile"
-          aria-label={t("common:cart")}
-        >
+        <Link to="/cart" className="cart-fab" aria-label={t("common:cart")}>
           <ShoppingCart size={26} strokeWidth={2.5} />
-          {count > 0 && <span className="cart-fab-mobile__badge">{count}</span>}
+          {count > 0 && (
+            <span className="cart-fab-mobile__badge" aria-live="polite">
+              {count}
+            </span>
+          )}
         </Link>
       )}
     </>
