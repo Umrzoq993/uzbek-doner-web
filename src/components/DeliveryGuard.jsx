@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AlertTriangle, MapPin, RefreshCcw } from "lucide-react";
 import { FlialAPI } from "../lib/api";
 import { useLocationStore } from "../store/location";
 import { useT } from "../i18n/i18n";
@@ -70,33 +71,37 @@ export default function DeliveryGuard({ onForceGeo }) {
     : t("checkout:delivery_unavailable_title");
 
   return (
-    <div className="modal-backdrop" style={{ zIndex: 1000 }}>
-      <div className="sheet" style={{ maxWidth: 420 }}>
-        <div className="sheet__head">
-          <div className="sheet__title">{titleText}</div>
+    <div
+      className="modal-backdrop delivery-guard-backdrop"
+      style={{ zIndex: 3000, placeItems: "center" }}
+    >
+      <div className="delivery-guard" role="alertdialog" aria-modal="true">
+        <div className="delivery-guard__icon" aria-hidden>
+          {isError ? <AlertTriangle size={42} /> : <MapPin size={42} />}
         </div>
-        <div className="sheet__body" style={{ fontSize: 14, lineHeight: 1.5 }}>
-          {bodyText}
-          {place?.label && (
-            <div style={{ marginTop: 12, fontSize: 12, opacity: 0.7 }}>
-              {place?.label}
-            </div>
-          )}
-        </div>
-        <div
-          className="sheet__foot"
-          style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}
-        >
+        <h3 className="delivery-guard__title">{titleText}</h3>
+        <p className="delivery-guard__body">{bodyText}</p>
+        {place?.label && (
+          <div className="delivery-guard__place" aria-label="Manzil">
+            <MapPin size={16} />
+            <span>{place.label}</span>
+          </div>
+        )}
+        <div className="delivery-guard__actions">
           {!isError && (
-            <button className="btn btn--primary" onClick={onForceGeo}>
+            <button
+              className="btn btn--primary delivery-guard__btn"
+              onClick={onForceGeo}
+            >
               {t("checkout:delivery_unavailable_change")}
             </button>
           )}
           {isError && (
             <button
-              className="btn btn--primary"
+              className="btn btn--primary delivery-guard__btn"
               onClick={() => window.location.reload()}
             >
+              <RefreshCcw size={16} style={{ marginRight: 6 }} />
               {t("common:retry") || "Qayta urinish"}
             </button>
           )}

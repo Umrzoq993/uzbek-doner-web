@@ -3142,6 +3142,125 @@ body:after {
   -webkit-backdrop-filter: blur(14px) saturate(150%);
   border: 0;
 }
+/* DeliveryGuard modal */
+.delivery-guard-backdrop {
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+}
+.delivery-guard {
+  width: min(480px, 92vw);
+  background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.09),
+      rgba(255, 255, 255, 0.03)
+    ),
+    color-mix(in oklab, var(--surface) 96%, transparent);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  padding: 34px 34px 30px;
+  box-shadow: 0 28px 70px -18px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: relative;
+  animation: dg-in 0.35s cubic-bezier(0.34, 1.6, 0.4, 1);
+}
+@keyframes dg-in {
+  from {
+    transform: translateY(14px) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.delivery-guard__icon {
+  width: 78px;
+  height: 78px;
+  border-radius: 22px;
+  background: linear-gradient(145deg, var(--brand), var(--brand-2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 34px;
+  box-shadow: 0 18px 38px -12px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+  position: relative;
+  isolation: isolate;
+  align-self: center;
+}
+.delivery-guard__icon:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 255, 255, 0.5),
+    transparent 70%
+  );
+  opacity: 0.35;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.delivery-guard__title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  margin: 4px 0 0;
+}
+.delivery-guard__body {
+  font-size: 14.5px;
+  line-height: 1.55;
+  opacity: 0.9;
+  margin: 0;
+}
+.delivery-guard__place {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12.5px;
+  opacity: 0.75;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 8px 10px;
+  border-radius: 14px;
+  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.5) inset;
+}
+.delivery-guard__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+.delivery-guard__btn {
+  min-height: 48px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 0 20px;
+  position: relative;
+}
+.delivery-guard__btn:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85),
+    0 0 0 6px rgba(20, 150, 255, 0.45);
+}
+@media (max-width: 560px) {
+  .delivery-guard {
+    padding: 28px 26px 26px;
+    border-radius: 24px;
+    gap: 16px;
+  }
+  .delivery-guard__title {
+    font-size: 20px;
+  }
+  .delivery-guard__icon {
+    width: 70px;
+    height: 70px;
+  }
+}
 .cart-subcard + .cart-subcard {
   border-left: 1px solid rgba(255, 255, 255, 0.06);
 }

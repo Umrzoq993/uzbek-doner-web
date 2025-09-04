@@ -101,6 +101,17 @@ export default function Cart() {
               </button>
             )}
           </div>
+          <div
+            className="cart-section-sep"
+            style={{
+              margin: "14px -4px 18px",
+              height: 1,
+              background:
+                "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 100%)",
+              border: 0,
+            }}
+            aria-hidden
+          />
 
           {!items.length && (
             <div className="checkout-card__muted">{t("common:cart_empty")}</div>
@@ -118,12 +129,25 @@ export default function Cart() {
                 className="summary-row"
                 style={{ alignItems: "center" }}
               >
-                <div>
-                  <div style={{ fontWeight: 800 }}>{name}</div>
-                  <small className="checkout-card__muted">
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      fontSize: 16,
+                      letterSpacing: 0.3,
+                    }}
+                  >
+                    {name}
+                  </div>
+                  <div
+                    className="checkout-card__muted"
+                    style={{ fontSize: 13.5, opacity: 0.75, fontWeight: 600 }}
+                  >
                     {fmtMoney(it.price || 0)} • {it.qty || 0}{" "}
                     {t("common:piece_suffix")}
-                  </small>
+                  </div>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
