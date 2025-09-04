@@ -1,5 +1,6 @@
 // src/pages/Cart.jsx
 import { useMemo, useEffect, useState } from "react";
+import { ChevronLeft, Sparkles } from "lucide-react";
 import { useMoneyFormatter, useT } from "../i18n/i18n";
 import { useLangStore } from "../store/lang";
 import { Link, useNavigate } from "react-router-dom";
@@ -187,36 +188,44 @@ export default function Cart() {
           )}
         </div>
 
-        {/* 3. Menyuga qaytish card */}
-        <div className="cart-card cart-card--return">
-          <Link to="/" className="cart-return-link">
-            <span className="cart-return-link__icon" aria-hidden>
-              ←
-            </span>
-            <span className="cart-return-link__text">
-              {lang === "ru" ? "Назад в меню" : "Menyuga qaytish"}
-            </span>
-          </Link>
-        </div>
-
-        {/* 4. To'lov card */}
-        {!!items.length && (
-          <div className="cart-card cart-card--pay">
-            <div className="cart-pay-head">
-              <div className="cart-pay-head__title">
-                {lang === "ru" ? "Оформление" : "To'lov"}
-              </div>
-            </div>
-            <button
-              className="cart-pay-action"
-              disabled
-              onClick={(e) => e.preventDefault()}
-              title={lang === "ru" ? "Скоро" : "Tez orada"}
+        {/* 3+4. Actions (Return + Pay) in one card with internal subcards */}
+        <div className="cart-card cart-card--actions">
+          <div className="cart-action-grid">
+            <div
+              className={`cart-subcard cart-subcard--return${
+                !items.length ? " is-alone" : ""
+              }`}
             >
-              {lang === "ru" ? "Скоро" : "Tez orada"}
-            </button>
+              <Link
+                to="/"
+                className="cart-return-link"
+                aria-label={lang === "ru" ? "Назад в меню" : "Menyuga qaytish"}
+              >
+                <span className="cart-return-link__icon" aria-hidden>
+                  <ChevronLeft size={18} />
+                </span>
+                <span className="cart-return-link__text">
+                  {lang === "ru" ? "Назад в меню" : "Menyuga qaytish"}
+                </span>
+              </Link>
+            </div>
+            {!!items.length && (
+              <div className="cart-subcard cart-subcard--pay">
+                <button
+                  className="cart-pay-action"
+                  disabled={disablePay}
+                  onClick={goCheckout}
+                  type="button"
+                  aria-label={
+                    lang === "ru" ? "Перейти к оплате" : "To‘lovga o‘tish"
+                  }
+                >
+                  {lang === "ru" ? "Перейти к оплате" : "To‘lovga o‘tish"}
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
       {/* Sticky paybar removed */}
     </div>

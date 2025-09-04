@@ -87,19 +87,31 @@ export default function ProductSheet({ open, product, onClose, onAdd }) {
           <div className="product-hero__grad" />
         </div>
         <div style={{ padding: 14, display: "grid", gap: 12 }}>
-          <h2 className="product-title">{title}</h2>
-          {(() => {
-            if (!product) return null;
-            const desc =
-              lang === "ru"
-                ? product.description_ru || product.description
-                : product.description_uz || product.description;
-            return desc ? <p className="product-desc">{desc}</p> : null;
-          })()}
-          <div className="price-row">
-            <div className="price-left">
-              <div className="badge">{t("checkout:total")}</div>
-              <div className="price-main">{fmtMoney(total || price)}</div>
+          <h2 className="product-title" style={{ marginBottom: 4 }}>
+            {title}
+          </h2>
+          <div
+            className="unit-row"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr auto",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div
+                className="unit-label"
+                style={{ fontSize: 13, opacity: 0.75, fontWeight: 600 }}
+              >
+                {t("product:unit_price")}
+              </div>
+              <div
+                className="unit-value"
+                style={{ fontSize: 24, fontWeight: 800, letterSpacing: 0.3 }}
+              >
+                {fmtMoney(price)}
+              </div>
             </div>
             <div className="qty-side">
               <div className="qty-chip" aria-label={t("product:quantity")}>
@@ -125,9 +137,41 @@ export default function ProductSheet({ open, product, onClose, onAdd }) {
               </div>
             </div>
           </div>
-          <div className="total-row">
-            <div className="total-label">{t("product:unit_price")}</div>
-            <div className="total-value">{fmtMoney(price)}</div>
+          {(() => {
+            if (!product) return null;
+            const desc =
+              lang === "ru"
+                ? product.description_ru || product.description
+                : product.description_uz || product.description;
+            return desc ? (
+              <p className="product-desc" style={{ marginTop: 4 }}>
+                {desc}
+              </p>
+            ) : null;
+          })()}
+          <div
+            className="total-row"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              marginTop: 4,
+              padding: "12px 10px 4px",
+              borderTop: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <div
+              className="total-label"
+              style={{ fontSize: 13, opacity: 0.7, fontWeight: 600 }}
+            >
+              {t("checkout:total")}
+            </div>
+            <div
+              className="total-value"
+              style={{ fontSize: 26, fontWeight: 800, letterSpacing: 0.4 }}
+            >
+              {fmtMoney(total || price)}
+            </div>
           </div>
           <button
             className={`btn btn--primary btn--lg ${qty > 0 ? "is-pop" : ""}`}
@@ -137,7 +181,7 @@ export default function ProductSheet({ open, product, onClose, onAdd }) {
             style={{ width: "100%", justifySelf: "stretch" }}
             type="button"
           >
-            {t("common:add_to_cart")} — {fmtMoney(total || price)}
+            {t("common:add_to_cart")}
           </button>
         </div>
       </div>

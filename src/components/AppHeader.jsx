@@ -78,11 +78,22 @@ export default function AppHeader() {
           <button
             type="button"
             onClick={() => setLang(lang === "uz" ? "ru" : "uz")}
-            className="chip"
-            style={{ fontSize: 12, marginLeft: 12 }}
+            className="chip lang-switch"
+            style={{
+              fontSize: 12,
+              marginLeft: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
             aria-label="Switch language"
           >
-            {lang === "uz" ? "RU" : "UZ"}
+            <span className="lang-switch__flag" aria-hidden>
+              {lang === "uz" ? "🇷🇺" : "🇺🇿"}
+            </span>
+            <span className="lang-switch__code">
+              {lang === "uz" ? "RU" : "UZ"}
+            </span>
           </button>
 
           {/* Manzil ko'rsatish / o'zgartirish */}

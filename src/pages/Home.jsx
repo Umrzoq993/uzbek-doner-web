@@ -436,7 +436,7 @@ function ProductCard({ product, qty, onAdd, onInc, onDec, onOpen, lang }) {
   }, [qty]);
 
   return (
-    <div className="card product-card" onClick={onOpen} role="button">
+    <div className="card card--neo product-card" onClick={onOpen} role="button">
       <div className="product-card__media">
         <Img
           src={product.imageUrl}

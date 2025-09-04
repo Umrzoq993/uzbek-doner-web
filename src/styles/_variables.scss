@@ -5,6 +5,37 @@
 
   /* Surfaces (dark-blue aurora) */
   --bg: #0b1b2b;
+  /* Unified app background (can be swapped to a gradient if desired) */
+  --app-bg: var(--bg);
+  /* Night sky aurora layers (used to compose --app-bg when gradient enabled) */
+  --app-bg-layer-1: radial-gradient(
+    1200px 780px at 50% -260px,
+    rgba(60, 130, 255, 0.16),
+    transparent 60%
+  );
+  --app-bg-layer-2: radial-gradient(
+    900px 620px at 0% 100%,
+    rgba(40, 110, 240, 0.12),
+    transparent 55%
+  );
+  --app-bg-layer-3: radial-gradient(
+    1100px 720px at 100% 100%,
+    rgba(0, 160, 255, 0.1),
+    transparent 58%
+  );
+  --app-bg-stars: repeating-radial-gradient(
+      circle at 10% 20%,
+      rgba(255, 255, 255, 0.18) 0 1px,
+      transparent 1px 60px
+    ),
+    repeating-radial-gradient(
+      circle at 80% 70%,
+      rgba(255, 255, 255, 0.16) 0 1px,
+      transparent 1px 48px
+    );
+  /* Toggle: set to composed gradient for decorative mode */
+  --app-bg: var(--app-bg-layer-1), var(--app-bg-layer-2), var(--app-bg-layer-3),
+    var(--bg);
   --surface: #0f2033;
   --surface-2: #0b1626;
   --line: rgba(173, 197, 255, 0.12);

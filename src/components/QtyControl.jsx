@@ -82,13 +82,17 @@ export default function QtyControl({
   const atMin = value <= min; // endi disable qilinmaydi, faqat vizual uchun foydalanish mumkin
   const atMax = max != null && value >= max;
 
+  // Dynamic accessible enlargement: if user has already increased (>=2) we can switch to xlg visual size
+  const dynamicVariant = value >= 2 && variant === "lg" ? "xlg" : variant;
+
   return (
     <div
-      className={`qty-chip ${
-        variant === "lg" ? "qty-chip--lg" : ""
+      className={`qty-chip ${dynamicVariant === "lg" ? "qty-chip--lg" : ""} ${
+        dynamicVariant === "xlg" ? "qty-chip--xlg" : ""
       } ${className}`}
       onClick={(e) => e.stopPropagation()}
       aria-label="Miqdor boshqaruvi"
+      data-variant={dynamicVariant}
     >
       <button
         className="qty-chip__btn"

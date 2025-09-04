@@ -39,7 +39,7 @@ export default function ProductCard({ product, onAdd, onOpen }) {
 
   return (
     <div
-      className="card"
+      className="card card--neo"
       onClick={onOpen}
       role="button"
       style={{
