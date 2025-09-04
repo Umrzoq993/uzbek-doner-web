@@ -14,7 +14,7 @@ export default function Layout() {
   const setOpenPicker = useLocationStore((s) => s.setOpenPicker);
   const [forceGeo, setForceGeo] = useState(false);
   const { pathname } = useLocation();
-  const hideFooter = ["/cart"].includes(pathname.split("?")[0]);
+  const hideFooter = ["/cart", "/checkout"].includes(pathname.split("?")[0]);
 
   // GeoPicker endi faqat foydalanuvchi o'zi chaqirganda yoki consentdan keyin kerak bo'ladi.
   // Shuning uchun avtomatik ochish olib tashlandi.

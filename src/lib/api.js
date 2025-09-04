@@ -109,26 +109,52 @@ export const FlialAPI = {
   async checkPoint({ latitude, longitude }) {
     // Prod domain; allows override via VITE_TEMP_API_BASE but falls back to main BASE
     const TEMP_BASE = import.meta.env.VITE_TEMP_API_BASE || BASE;
+    // Avto login (agar sozlangan bo'lsa)
     try {
       await ensureAuthIfNeeded();
     } catch {
       /* ignore */
     }
-    const token = tokenStore.get();
-    const headers = { Accept: "application/json" };
-    if (token) headers.Authorization = `Bearer ${token}`;
+
+    // Interceptorlardan foydalanish uchun umumiy http instance dan foydalanamiz
+    // (shunda 401 bo'lsa avtomatik refresh/login retry ishlaydi)
     const url = `${TEMP_BASE}/flials/check_point`;
-    const { data } = await axios.post(
-      url,
-      "", // body bo'sh
-      {
-        params: { latitude, longitude },
-        headers,
-        timeout: 15000,
-        validateStatus: (s) => s < 500,
+    try {
+      const { data } = await http.post(
+        url,
+        "", // body bo'sh (backend query param qabul qilsa)
+        {
+          params: { latitude, longitude },
+          timeout: 15000,
+          headers: { Accept: "application/json" },
+          validateStatus: (s) => s < 500,
+        }
+      );
+      // Agar backend 401 qaytargan bo'lsa va interceptor refresh qilmagan bo'lsa,
+      // tokenni tozalab bir martalik qayta urinib ko'ramiz.
+      if (
+        data?.detail === "Not authenticated" ||
+        data?.detail === "Unauthorized"
+      ) {
+        tokenStore.clear();
+        try {
+          await ensureAuthIfNeeded();
+        } catch {
+          /* ignore */
+        }
+        const retry = await http.post(url, "", {
+          params: { latitude, longitude },
+          timeout: 15000,
+          headers: { Accept: "application/json" },
+          validateStatus: (s) => s < 500,
+        });
+        return retry.data;
       }
-    );
-    return data;
+      return data;
+    } catch (e) {
+      // Pastga tashlaymiz (chaqiruvchi try/catch qilishi mumkin)
+      throw e;
+    }
   },
 };
 

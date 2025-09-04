@@ -1,5 +1,6 @@
 // src/pages/Checkout.jsx
 import { useMemo, useState, useEffect } from "react";
+import { DollarSign, CreditCard, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../store/cart";
 import { useLocationStore } from "../store/location";
@@ -38,8 +39,8 @@ export default function Checkout() {
   const { place, details, setDetails } = useLocationStore();
   const [geoOpen, setGeoOpen] = useState(false);
 
-  // Hozircha faqat naqd to'lov (cash)
-  // payMethod state removed (only 'cash' supported currently)
+  // To'lov usuli
+  const [payMethod, setPayMethod] = useState("cash"); // 'cash' | 'payme' | 'click'
   const [phone9, setPhone9] = useState(""); // faqat 9 ta raqam
   const [loading, setLoading] = useState(false);
   const [deliveryPrice, setDeliveryPrice] = useState(FALLBACK_DELIVERY);
@@ -109,7 +110,8 @@ export default function Checkout() {
     !feeLoading &&
     Number.isFinite(deliveryPrice) &&
     deliveryPrice > 0 &&
-    validPhone;
+    validPhone &&
+    payMethod === "cash"; // faqat naqd ishlaydi hozircha
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [skipConfirm, setSkipConfirm] = useState(() => {
@@ -156,7 +158,7 @@ export default function Checkout() {
         latitude: place?.lat || 0,
         longitude: place?.lon || 0,
         delivery_price: deliveryPrice,
-        payment_type: "cash",
+        payment_type: payMethod,
         flial_id: flialId,
         comment: details?.courierNote || "",
         details: items.map((it) => ({
@@ -188,6 +190,19 @@ export default function Checkout() {
   const handlePay = () => {
     if (!validPhone) {
       toast?.error?.(t("checkout:toast_phone_required"));
+      return;
+    }
+    if (payMethod !== "cash") {
+      toast?.warn?.(
+        (lang === "ru"
+          ? "Пока что работает только оплата наличными"
+          : "Hozircha faqat naqd to'lov ishlaydi") +
+          (payMethod === "payme"
+            ? " (Payme)"
+            : payMethod === "click"
+            ? " (Click)"
+            : "")
+      );
       return;
     }
     if (skipConfirm) {
@@ -262,18 +277,10 @@ export default function Checkout() {
             />
           </div>
 
-          {/* Manzil */}
+          {/* Manzil (soddalashtirilgan) */}
           <div className="checkout-card">
             <h3 className="checkout-card__title">{t("checkout:address")}</h3>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 10,
-              }}
-            >
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <div className="checkout-card__muted" style={{ flex: 1 }}>
                 {place?.label || t("checkout:address_not_selected")}
               </div>
@@ -292,42 +299,67 @@ export default function Checkout() {
                   : "Tanlash"}
               </button>
             </div>
-            <div className="field-row">
-              <input
-                className="field"
-                placeholder={t("checkout:entrance")}
-                value={details?.entrance || ""}
-                onChange={(e) => setDetails({ entrance: e.target.value })}
-              />
-              <input
-                className="field"
-                placeholder={t("checkout:floor")}
-                value={details?.floor || ""}
-                onChange={(e) => setDetails({ floor: e.target.value })}
-              />
-              <input
-                className="field"
-                placeholder={t("checkout:apt")}
-                value={details?.apt || ""}
-                onChange={(e) => setDetails({ apt: e.target.value })}
-              />
-              <textarea
-                className="field field--long"
-                style={{ width: "100%" }}
-                placeholder={t("checkout:courier_note")}
-                value={details?.courierNote || ""}
-                onChange={(e) => setDetails({ courierNote: e.target.value })}
-              />
-            </div>
           </div>
 
           {/* To'lov usuli */}
           <div className="checkout-card">
             <h3 className="checkout-card__title">{t("checkout:pay_method")}</h3>
-            <div className="checkout-card__muted" style={{ marginBottom: 8 }}>
-              {t("checkout:pay_cash")} (hozircha faqat naqd)
+            <div className="pay-methods">
+              {[
+                {
+                  key: "cash",
+                  labelUz: "Naqd",
+                  labelRu: "Наличные",
+                  icon: "cash",
+                },
+                {
+                  key: "payme",
+                  labelUz: "Payme",
+                  labelRu: "Payme",
+                  icon: "payme",
+                },
+                {
+                  key: "click",
+                  labelUz: "Click",
+                  labelRu: "Click",
+                  icon: "click",
+                },
+              ].map((m) => {
+                const active = payMethod === m.key;
+                return (
+                  <label
+                    key={m.key}
+                    className={"pay-method" + (active ? " is-active" : "")}
+                  >
+                    <input
+                      type="radio"
+                      name="payMethod"
+                      value={m.key}
+                      checked={active}
+                      onChange={() => {
+                        setPayMethod(m.key);
+                        if (m.key !== "cash") {
+                          toast?.info?.(
+                            lang === "ru"
+                              ? "Скоро будет доступно. Пока что только наличные"
+                              : "Tez orada. Hozircha faqat naqd"
+                          );
+                        }
+                      }}
+                    />
+                    <span className="pay-method__icon" aria-hidden>
+                      {m.icon === "cash" && <DollarSign size={24} />}
+                      {m.icon === "payme" && <CreditCard size={22} />}
+                      {m.icon === "click" && <Wallet size={22} />}
+                    </span>
+                    <span className="pay-method__label">
+                      {lang === "ru" ? m.labelRu : m.labelUz}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
-            <div className="field-row" style={{ marginTop: 4 }}>
+            <div className="field-row" style={{ marginTop: 14 }}>
               <div
                 style={{
                   display: "grid",
@@ -372,6 +404,11 @@ export default function Checkout() {
                 style={{ color: validPhone ? undefined : "#ff6666" }}
               >
                 {t("checkout:phone_required")} • {formatMasked(phone9)}
+                {payMethod !== "cash" && (
+                  <span style={{ color: "#e6b300", marginLeft: 6 }}>
+                    {lang === "ru" ? "(только наличные)" : "(faqat naqd)"}
+                  </span>
+                )}
               </small>
             </div>
           </div>
@@ -415,13 +452,6 @@ export default function Checkout() {
                 </div>
               </div>
             </div>
-
-            <div className="info-card">
-              <strong>{t("checkout:about_order")}</strong>
-              <div className="checkout-card__muted">
-                {t("checkout:products_count", { count: totalQty })}
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -436,7 +466,7 @@ export default function Checkout() {
             className="paybar__btn"
             disabled
             onClick={(e) => e.preventDefault()}
-            title={lang === "ru" ? "Tez orada" : "Tez orada"}
+            title={lang === "ru" ? "Скоро" : "Tez orada"}
           >
             {lang === "ru" ? "Скоро" : "Tez orada"}
           </button>

@@ -32,7 +32,7 @@ export const resources = {
       cart: "Savat",
       cart_empty: "Savat bo‘sh",
       note_for_restaurant: "Restoran uchun izoh",
-      note_placeholder: "Izohda xullas",
+      note_placeholder: "Izoh ...",
       address: "Manzil",
       address_not_selected: "Manzil tanlanmagan",
       entrance: "Pod’ezd",
