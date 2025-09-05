@@ -96,23 +96,57 @@ export default function AppHeader() {
             </span>
           </button>
 
-          {/* Manzil ko'rsatish / o'zgartirish */}
-          {place && availability?.available ? (
-            <div className="header-loc" style={{ marginLeft: 14 }}>
+          {/* Manzil ko'rsatish / o'zgartirish – endi doimiy ko'rsatamiz (agar place bor) */}
+          {place ? (
+            <div
+              className={
+                "header-loc" +
+                (availability?.checked && !availability?.available
+                  ? " header-loc--unavailable"
+                  : "")
+              }
+              style={{ marginLeft: 14 }}
+            >
               <button
                 type="button"
                 onClick={() => setOpenPicker(true)}
                 className="header-loc__btn"
-                aria-label="Manzilni o'zgartirish"
+                aria-label={
+                  lang === "ru" ? "Изменить адрес" : "Manzilni o'zgartirish"
+                }
                 title={place.label}
               >
                 <span className="header-loc__pin" aria-hidden>
                   📍
                 </span>
-                <span className="header-loc__text">
-                  {place.street ||
-                    place.label ||
-                    (lang === "ru" ? "Адрес" : "Manzil")}
+                <span
+                  className="header-loc__text"
+                  style={{ display: "flex", gap: 6, alignItems: "center" }}
+                >
+                  <span
+                    style={{
+                      maxWidth: 180,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {place.street || place.label}
+                  </span>
+                  {/* Tekshiruv badge olib tashlandi foydalanuvchini chalg'itmaslik uchun */}
+                  {availability?.checked && !availability?.available && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        background: "#b91c1c",
+                        color: "#fff",
+                        padding: "2px 6px",
+                        borderRadius: 8,
+                      }}
+                    >
+                      {lang === "ru" ? "нет доставки" : "yo'q"}
+                    </span>
+                  )}
                 </span>
                 <span className="header-loc__change">
                   {lang === "ru" ? "Изм." : "O'zgartirish"}
@@ -132,11 +166,7 @@ export default function AppHeader() {
                 fontWeight: 600,
               }}
             >
-              {place
-                ? lang === "ru"
-                  ? "Адрес недоступен"
-                  : "Manzil noqulay"
-                : t("common:select_address_button")}
+              {t("common:select_address_button")}
             </button>
           )}
         </div>

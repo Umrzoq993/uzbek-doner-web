@@ -1,6 +1,8 @@
 // src/pages/Checkout.jsx
 import { useMemo, useState, useEffect } from "react";
-import { DollarSign, CreditCard, Wallet } from "lucide-react";
+import { DollarSign } from "lucide-react";
+import paymeLogo from "../assets/payme.png";
+import clickLogo from "../assets/click.png";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../store/cart";
 import { useLocationStore } from "../store/location";
@@ -49,6 +51,30 @@ export default function Checkout() {
   const [branchName, setBranchName] = useState("");
   const [distanceKm, setDistanceKm] = useState(null);
 
+  // Confirm modal holati
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [skipConfirm, setSkipConfirm] = useState(() => {
+    try {
+      return localStorage.getItem("ud_skip_confirm") === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  // Derived flags
+  const validPhone = phone9.length === 9;
+
+  // Hisob-kitoblar (refaktordan keyin qayta tiklandi)
+  const subtotal = useMemo(
+    () => items.reduce((s, i) => s + (i.price || 0) * (i.qty || 0), 0),
+    [items]
+  );
+  const totalQty = useMemo(
+    () => items.reduce((s, i) => s + (i.qty || 0), 0),
+    [items]
+  );
+  const total = Math.max(0, subtotal + (deliveryPrice || 0));
+
   // Manzil o'zgarganda delivery price hisoblash
   useEffect(() => {
     const lat = place?.lat;
@@ -91,37 +117,7 @@ export default function Checkout() {
       cancelled = true;
     };
   }, [place?.lat, place?.lon]);
-
-  // Hisob-kitoblar
-  const subtotal = useMemo(
-    () => items.reduce((s, i) => s + (i.price || 0) * (i.qty || 0), 0),
-    [items]
-  );
-  const totalQty = useMemo(
-    () => items.reduce((s, i) => s + (i.qty || 0), 0),
-    [items]
-  );
-  const total = Math.max(0, subtotal + (deliveryPrice || 0));
-
-  const validPhone = phone9.length === 9;
-  const canSubmit =
-    items.length > 0 &&
-    !loading &&
-    !feeLoading &&
-    Number.isFinite(deliveryPrice) &&
-    deliveryPrice > 0 &&
-    validPhone &&
-    payMethod === "cash"; // faqat naqd ishlaydi hozircha
-
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [skipConfirm, setSkipConfirm] = useState(() => {
-    try {
-      return localStorage.getItem("ud_skip_confirm") === "1";
-    } catch {
-      return false;
-    }
-  });
-
+  // Buyurtma yuborish (faqat naqd)
   const submitOrder = async () => {
     if (!items.length) return toast?.error?.(t("checkout:toast_cart_empty"));
     if (!place?.label) return toast?.error?.(t("checkout:toast_need_address"));
@@ -140,7 +136,6 @@ export default function Checkout() {
     if (!validPhone) return toast?.error?.(t("checkout:toast_phone_required"));
 
     const phoneE164 = toE164(phone9);
-    // Faqat naqd rejim: buyurtmani yuboramiz
     setLoading(true);
     try {
       const addressParts = [
@@ -150,7 +145,6 @@ export default function Checkout() {
         details?.apt ? `Кв: ${details.apt}` : "",
       ].filter(Boolean);
       const fullAddress = addressParts.join("; ");
-
       const payload = {
         source: "web",
         phone: phoneE164 || "",
@@ -161,12 +155,8 @@ export default function Checkout() {
         payment_type: payMethod,
         flial_id: flialId,
         comment: details?.courierNote || "",
-        details: items.map((it) => ({
-          product_id: it.id,
-          number: it.qty,
-        })),
+        details: items.map((it) => ({ product_id: it.id, number: it.qty })),
       };
-
       const res = await OrderAPI.create(payload);
       if (res?.status) {
         const oid = res?.order_id ? ` #${res.order_id}` : "";
@@ -326,10 +316,13 @@ export default function Checkout() {
                 },
               ].map((m) => {
                 const active = payMethod === m.key;
+                const lbl = lang === "ru" ? m.labelRu : m.labelUz;
+                const showText = m.key === "cash"; // faqat naqd matn ko'rinsin
                 return (
                   <label
                     key={m.key}
                     className={"pay-method" + (active ? " is-active" : "")}
+                    aria-label={lbl}
                   >
                     <input
                       type="radio"
@@ -349,12 +342,36 @@ export default function Checkout() {
                     />
                     <span className="pay-method__icon" aria-hidden>
                       {m.icon === "cash" && <DollarSign size={24} />}
-                      {m.icon === "payme" && <CreditCard size={22} />}
-                      {m.icon === "click" && <Wallet size={22} />}
+                      {m.icon === "payme" && (
+                        <img
+                          src={paymeLogo}
+                          alt={lbl}
+                          style={{
+                            height: 22,
+                            width: "auto",
+                            display: "block",
+                          }}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      )}
+                      {m.icon === "click" && (
+                        <img
+                          src={clickLogo}
+                          alt={lbl}
+                          style={{
+                            height: 22,
+                            width: "auto",
+                            display: "block",
+                          }}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      )}
                     </span>
-                    <span className="pay-method__label">
-                      {lang === "ru" ? m.labelRu : m.labelUz}
-                    </span>
+                    {showText && (
+                      <span className="pay-method__label">{lbl}</span>
+                    )}
                   </label>
                 );
               })}

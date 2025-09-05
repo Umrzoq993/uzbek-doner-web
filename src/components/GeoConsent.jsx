@@ -3,31 +3,38 @@ import { reverseGeocode } from "../lib/geo";
 import { useLocationStore } from "../store/location";
 import { toastError } from "../lib/toast";
 
-// LocalStorage key to remember consent decision
-const CONSENT_KEY = "ud_geo_consent_v1";
+// LocalStorage keys
+const CONSENT_KEY = "ud_geo_consent_v1"; // 'granted'
+const SNOOZE_KEY = "ud_geo_consent_snooze_v1"; // timestamp ms
+const SNOOZE_HOURS = Number(import.meta.env.VITE_GEO_SNOOZE_HOURS || 12); // default 12 soat
 
 export default function GeoConsent() {
   const place = useLocationStore((s) => s.place);
   const setPlace = useLocationStore((s) => s.setPlace);
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errMsg, setErrMsg] = useState("");
+  // No error message: UX soddalashtirildi – foydalanuvchi istasa keyinroq tanlaydi
+  const [errMsg] = useState("");
 
   useEffect(() => {
-    if (place) return; // already have place
+    if (place) return; // allaqachon mavjud
     try {
-      const saved = localStorage.getItem(CONSENT_KEY);
-      if (saved === "granted") {
-        // Auto fetch silently
+      const granted = localStorage.getItem(CONSENT_KEY) === "granted";
+      if (granted) {
         acquire();
-      } else {
+        return;
+      }
+      const snoozeTs = Number(localStorage.getItem(SNOOZE_KEY) || 0);
+      const now = Date.now();
+      const stillSnoozed = snoozeTs && now - snoozeTs < SNOOZE_HOURS * 3600_000;
+      if (!stillSnoozed) {
         setVisible(true);
       }
     } catch {
       setVisible(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [place]);
 
   const acquire = () => {
     if (!("geolocation" in navigator)) {
@@ -71,7 +78,12 @@ export default function GeoConsent() {
 
   // User postpones but modal stays until granted
   const later = () => {
-    setErrMsg("Joylashuv aniqlanmadi — ruxsat berishingiz kerak");
+    try {
+      localStorage.setItem(SNOOZE_KEY, String(Date.now()));
+    } catch {
+      /* ignore */
+    }
+    setVisible(false);
   };
 
   if (!visible || place) return null;
@@ -127,6 +139,7 @@ export default function GeoConsent() {
             onClick={later}
             disabled={loading}
             type="button"
+            title={`Keyingi ${SNOOZE_HOURS} soat davomida so'ralmaydi`}
           >
             Keyinroq
           </button>

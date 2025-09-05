@@ -66,15 +66,14 @@ export default function DeliveryGuard({ onForceGeo }) {
       setChecking(true);
       let attempt = 0;
       let finalResult = null;
-      while (attempt < 2 && !cancelled) {
+      let consecutiveUnavailable = 0;
+      while (attempt < 3 && !cancelled) {
         const res = await runOnce();
         if (cancelled) break;
-        // Ignore stale response if place changed mid-flight
-        if (lat !== place.lat || lon !== place.lon) {
-          break;
-        }
+        if (lat !== place.lat || lon !== place.lon) break; // stale
+
         if (!res.ok) {
-          // Network yoki timeout – faqat bitta retry qilishga arziydi
+          // Network/timeout: treat as error after second failure
           if (attempt === 0) {
             attempt++;
             continue;
@@ -88,14 +87,27 @@ export default function DeliveryGuard({ onForceGeo }) {
             finalResult = cls;
             break;
           }
-          // Agar unavailable chiqsa va bu birinchi urinish bo'lsa – transient ehtimoli uchun bitta retry
-          if (cls.reason === "unavailable" && attempt === 0) {
-            attempt++;
-            continue;
+          if (cls.reason === "unavailable") {
+            consecutiveUnavailable++;
+          } else {
+            // error classification resets unavailable counter
+            consecutiveUnavailable = 0;
           }
-          // error yoki ikkinchi martada ham unavailable – qabul qilamiz
-          finalResult = cls;
-          break;
+          // We require 2 consecutive 'unavailable' + a delayed confirm attempt (3rd) to accept
+          if (consecutiveUnavailable >= 2) {
+            if (attempt < 2) {
+              // schedule a delay before the final confirming attempt
+              await new Promise((r) => setTimeout(r, 550));
+              attempt++;
+              continue; // third (confirmation) attempt
+            } else {
+              finalResult = cls; // confirmed unavailable after delay
+              break;
+            }
+          }
+          // If this is first unavailable, just retry quickly
+          attempt++;
+          continue;
         }
       }
 
