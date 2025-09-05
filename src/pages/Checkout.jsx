@@ -64,6 +64,13 @@ export default function Checkout() {
   // Derived flags
   const validPhone = phone9.length === 9;
 
+  // Ish vaqti: 09:00 - 03:00 (keyingi kun). Bu oraliqda buyurtma berish mumkin.
+  // local time (browser) bo'yicha tekshiramiz.
+  const now = new Date();
+  const hour = now.getHours(); // 0-23
+  // Allowed interval: hour >=9 && <24  (9:00 - 23:59)  yoki hour <3 (00:00 - 02:59)
+  const isWorkingHours = (hour >= 9 && hour < 24) || hour < 3;
+
   // Hisob-kitoblar (refaktordan keyin qayta tiklandi)
   const subtotal = useMemo(
     () => items.reduce((s, i) => s + (i.price || 0) * (i.qty || 0), 0),
@@ -78,7 +85,8 @@ export default function Checkout() {
     !!place?.label &&
     !feeLoading &&
     deliveryPrice > 0 &&
-    !loading;
+    !loading &&
+    isWorkingHours; // ish vaqti tashqarisida bloklanadi
 
   // Manzil o'zgarganda delivery price hisoblash
   useEffect(() => {
@@ -521,6 +529,10 @@ export default function Checkout() {
             onClick={(e) => {
               e.preventDefault();
               if (!canOrder) return;
+              if (!isWorkingHours) {
+                toast?.warning?.(t("checkout:toast_closed"));
+                return;
+              }
               // Paybar orqali ham buyurtma jarayonini boshlash (naqd) – handlePay ga o'xshash
               if (payMethod !== "cash") return; // hozircha faqat naqd
               if (skipConfirm) submitOrder();
@@ -541,8 +553,12 @@ export default function Checkout() {
                 ? "Оформить"
                 : "Buyurtma berish"
               : lang === "ru"
-              ? "Заполните"
-              : "To'ldiring"}
+              ? isWorkingHours
+                ? "Заполните"
+                : "Закрыто"
+              : isWorkingHours
+              ? "To'ldiring"
+              : "Yopiq"}
           </button>
         </div>
       </div>
