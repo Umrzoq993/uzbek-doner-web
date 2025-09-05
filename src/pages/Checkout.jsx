@@ -74,6 +74,14 @@ export default function Checkout() {
     [items]
   );
   const total = Math.max(0, subtotal + (deliveryPrice || 0));
+  // Buyurtma shartlari (puls faqat tayyor bo'lsa yoqiladi)
+  const canOrder =
+    items.length > 0 &&
+    validPhone &&
+    !!place?.label &&
+    !feeLoading &&
+    deliveryPrice > 0 &&
+    !loading;
 
   // Manzil o'zgarganda delivery price hisoblash
   useEffect(() => {
@@ -88,6 +96,9 @@ export default function Checkout() {
           latitude: lat,
           longitude: lon,
         });
+        if (process.env.NODE_ENV !== "production") {
+          console.debug("[Checkout] checkPoint resp", data);
+        }
         if (cancelled) return;
         if (data?.status) {
           setDeliveryPrice(Number(data?.price || 0));
@@ -104,6 +115,9 @@ export default function Checkout() {
           setDistanceKm(null);
         }
       } catch {
+        if (process.env.NODE_ENV !== "production") {
+          console.debug("[Checkout] checkPoint error");
+        }
         if (!cancelled) {
           setDeliveryPrice(FALLBACK_DELIVERY);
           setBranchName("");
@@ -127,6 +141,7 @@ export default function Checkout() {
           ? "Цена доставки рассчитывается"
           : "Yetkazib berish narxi hisoblanmoqda"
       );
+    // Yetkazib berish narxi > 0 bo'lishi shart (bepul tarif yo'q)
     if (!deliveryPrice || deliveryPrice <= 0)
       return toast?.error?.(
         lang === "ru"
@@ -242,14 +257,59 @@ export default function Checkout() {
                     <div>
                       <div style={{ fontWeight: 800 }}>{name}</div>
                       <small className="checkout-card__muted">
-                        {fmtMoney(it.price || 0)} • {it.qty || 0}{" "}
-                        {t("common:piece_suffix")}
+                        {it.qty || 0} × {fmtMoney(it.price || 0)}
                       </small>
                     </div>
                     <div style={{ fontWeight: 700 }}>{fmtMoney(line)}</div>
                   </div>
                 );
               })}
+            </div>
+            {/* Qo'shilgan: umumiy hisob-kitob shu kart ichida */}
+            <div
+              style={{
+                marginTop: 12,
+                borderTop: "1px solid var(--line)",
+                paddingTop: 12,
+                display: "grid",
+                gap: 6,
+              }}
+            >
+              <div className="summary-row summary-row--muted">
+                <div>{t("checkout:order")}</div>
+                <div>{fmtMoney(subtotal)}</div>
+              </div>
+              <div className="summary-row summary-row--muted">
+                <div>{t("checkout:delivery")}</div>
+                <div>
+                  {feeLoading
+                    ? "…"
+                    : deliveryPrice > 0
+                    ? fmtMoney(deliveryPrice)
+                    : "—"}
+                </div>
+              </div>
+              {(branchName || feeLoading) && (
+                <div
+                  className="summary-row summary-row--muted"
+                  style={{ fontSize: 12, opacity: 0.85 }}
+                >
+                  <div style={{ flex: 1 }}>
+                    {feeLoading
+                      ? t("checkout:loading_delivery")
+                      : branchName || t("checkout:delivery_unavailable")}
+                  </div>
+                  <div>
+                    {!feeLoading && distanceKm != null
+                      ? t("checkout:branch_distance_unit", { km: distanceKm })
+                      : ""}
+                  </div>
+                </div>
+              )}
+              <div className="summary-row summary-row--total">
+                <div>{t("checkout:total")}</div>
+                <div>{fmtMoney(total)}</div>
+              </div>
             </div>
           </div>
 
@@ -276,17 +336,32 @@ export default function Checkout() {
               </div>
               <button
                 type="button"
-                className="btn btn--outline"
-                style={{ whiteSpace: "nowrap" }}
+                className={
+                  "checkout-card__addr-btn" + (!place?.label ? " is-pulse" : "")
+                }
                 onClick={() => setGeoOpen(true)}
+                aria-label={
+                  place?.label
+                    ? lang === "ru"
+                      ? "Адрес изменить"
+                      : "Manzilni o'zgartirish"
+                    : lang === "ru"
+                    ? "Выбрать адрес"
+                    : "Manzil tanlash"
+                }
               >
-                {place?.label
-                  ? lang === "ru"
-                    ? "Изменить"
-                    : "O'zgartirish"
-                  : lang === "ru"
-                  ? "Выбрать"
-                  : "Tanlash"}
+                <span className="addr-btn__icon" aria-hidden>
+                  📍
+                </span>
+                <span className="addr-btn__text">
+                  {place?.label
+                    ? lang === "ru"
+                      ? "Изменить"
+                      : "O'zgartirish"
+                    : lang === "ru"
+                    ? "Выбрать"
+                    : "Tanlash"}
+                </span>
               </button>
             </div>
           </div>
@@ -317,7 +392,8 @@ export default function Checkout() {
               ].map((m) => {
                 const active = payMethod === m.key;
                 const lbl = lang === "ru" ? m.labelRu : m.labelUz;
-                const showText = m.key === "cash"; // faqat naqd matn ko'rinsin
+                // Endi barcha usullar uchun matn ko'rsatamiz (yonma-yon)
+                const showText = true;
                 return (
                   <label
                     key={m.key}
@@ -340,15 +416,29 @@ export default function Checkout() {
                         }
                       }}
                     />
-                    <span className="pay-method__icon" aria-hidden>
-                      {m.icon === "cash" && <DollarSign size={24} />}
+                    <span
+                      className="pay-method__icon"
+                      aria-hidden
+                      style={
+                        m.icon !== "cash"
+                          ? {
+                              width: 54,
+                              height: 54,
+                              padding: 4,
+                              background: "rgba(255,255,255,0.10)",
+                            }
+                          : undefined
+                      }
+                    >
+                      {m.icon === "cash" && <DollarSign size={26} />}
                       {m.icon === "payme" && (
                         <img
                           src={paymeLogo}
                           alt={lbl}
                           style={{
-                            height: 22,
-                            width: "auto",
+                            width: "80%",
+                            height: "80%",
+                            objectFit: "contain",
                             display: "block",
                           }}
                           loading="lazy"
@@ -360,8 +450,9 @@ export default function Checkout() {
                           src={clickLogo}
                           alt={lbl}
                           style={{
-                            height: 22,
-                            width: "auto",
+                            width: "80%",
+                            height: "80%",
+                            objectFit: "contain",
                             display: "block",
                           }}
                           loading="lazy"
@@ -376,7 +467,14 @@ export default function Checkout() {
                 );
               })}
             </div>
-            <div className="field-row" style={{ marginTop: 14 }}>
+          </div>
+
+          {/* Telefon raqami */}
+          <div className="checkout-card">
+            <h3 className="checkout-card__title">
+              {lang === "ru" ? "Телефон" : "Telefon"}
+            </h3>
+            <div className="field-row" style={{ marginTop: 4 }}>
               <div
                 style={{
                   display: "grid",
@@ -418,7 +516,10 @@ export default function Checkout() {
               </div>
               <small
                 className="checkout-card__muted"
-                style={{ color: validPhone ? undefined : "#ff6666" }}
+                style={{
+                  marginTop: 8,
+                  color: validPhone ? undefined : "#ff6666",
+                }}
               >
                 {t("checkout:phone_required")} • {formatMasked(phone9)}
                 {payMethod !== "cash" && (
@@ -431,46 +532,7 @@ export default function Checkout() {
           </div>
         </div>
 
-        {/* RIGHT */}
-        <div className="right">
-          <div className="summary">
-            <div className="summary-card">
-              <div className="summary-list">
-                <div className="summary-row summary-row--muted">
-                  <div>{t("checkout:order")}</div>
-                  <div>{fmtMoney(subtotal)}</div>
-                </div>
-                <div className="summary-row summary-row--muted">
-                  <div>{t("checkout:delivery")}</div>
-                  <div>{feeLoading ? "…" : fmtMoney(deliveryPrice || 0)}</div>
-                </div>
-                <div
-                  className="summary-row summary-row--muted"
-                  style={{
-                    fontSize: 12,
-                    opacity: 0.85,
-                    display: branchName || feeLoading ? "flex" : "none",
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    {feeLoading
-                      ? t("checkout:loading_delivery")
-                      : branchName || t("checkout:delivery_unavailable")}
-                  </div>
-                  <div>
-                    {!feeLoading && distanceKm != null
-                      ? t("checkout:branch_distance_unit", { km: distanceKm })
-                      : ""}
-                  </div>
-                </div>
-                <div className="summary-row summary-row--total">
-                  <div>{t("checkout:total")}</div>
-                  <div>{fmtMoney(total)}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* RIGHT panel olib tashlandi – endi hammasi chap kart ichida */}
       </div>
 
       {/* PAYBAR */}
@@ -480,12 +542,33 @@ export default function Checkout() {
             {t("checkout:total")}:&nbsp; {fmtMoney(total)}
           </div>
           <button
-            className="paybar__btn"
-            disabled
-            onClick={(e) => e.preventDefault()}
-            title={lang === "ru" ? "Скоро" : "Tez orada"}
+            className={"paybar__btn" + (canOrder ? " is-pulse" : "")}
+            disabled={!canOrder}
+            onClick={(e) => {
+              e.preventDefault();
+              if (!canOrder) return;
+              // Paybar orqali ham buyurtma jarayonini boshlash (naqd) – handlePay ga o'xshash
+              if (payMethod !== "cash") return; // hozircha faqat naqd
+              if (skipConfirm) submitOrder();
+              else setConfirmOpen(true);
+            }}
+            title={
+              canOrder
+                ? lang === "ru"
+                  ? "Оформить заказ"
+                  : "Buyurtma berish"
+                : lang === "ru"
+                ? "Заполните ma'lumotlarni"
+                : "Ma'lumotlarni to'ldiring"
+            }
           >
-            {lang === "ru" ? "Скоро" : "Tez orada"}
+            {canOrder
+              ? lang === "ru"
+                ? "Оформить"
+                : "Buyurtma berish"
+              : lang === "ru"
+              ? "Заполните"
+              : "To'ldiring"}
           </button>
         </div>
       </div>
@@ -594,7 +677,9 @@ export default function Checkout() {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span>{lang === "ru" ? "Доставка" : "Yetkazib berish"}</span>
-              <strong>{fmtMoney(deliveryPrice)}</strong>
+              <strong>
+                {deliveryPrice > 0 ? fmtMoney(deliveryPrice) : "—"}
+              </strong>
             </div>
             <div
               style={{

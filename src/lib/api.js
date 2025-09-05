@@ -120,39 +120,44 @@ export const FlialAPI = {
     // (shunda 401 bo'lsa avtomatik refresh/login retry ishlaydi)
     const url = `${TEMP_BASE}/flials/check_point`;
     try {
-      const { data } = await http.post(
-        url,
-        "", // body bo'sh (backend query param qabul qilsa)
-        {
-          params: { latitude, longitude },
-          timeout: 15000,
-          headers: { Accept: "application/json" },
-          validateStatus: (s) => s < 500,
-        }
-      );
-      // Agar backend 401 qaytargan bo'lsa va interceptor refresh qilmagan bo'lsa,
-      // tokenni tozalab bir martalik qayta urinib ko'ramiz.
-      if (
-        data?.detail === "Not authenticated" ||
-        data?.detail === "Unauthorized"
-      ) {
-        tokenStore.clear();
-        try {
-          await ensureAuthIfNeeded();
-        } catch {
-          /* ignore */
-        }
-        const retry = await http.post(url, "", {
+      const doReq = async () =>
+        http.post(url, "", {
           params: { latitude, longitude },
           timeout: 15000,
           headers: { Accept: "application/json" },
           validateStatus: (s) => s < 500,
         });
-        return retry.data;
+      let { data, status } = await doReq();
+      // 401 yoki auth detail bo'lsa: tokenni tozalab qayta login
+      if (
+        status === 401 ||
+        data?.detail === "Not authenticated" ||
+        data?.detail === "Unauthorized"
+      ) {
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.debug("[FlialAPI.checkPoint] 401 first attempt", data);
+        }
+        tokenStore.clear();
+        try {
+          await ensureAuthIfNeeded();
+        } catch {
+          /* ignore auto auth fail */
+        }
+        const retry = await doReq();
+        data = retry.data;
+        status = retry.status;
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.debug("[FlialAPI.checkPoint] retry resp", data);
+        }
       }
       return data;
     } catch (e) {
-      // Pastga tashlaymiz (chaqiruvchi try/catch qilishi mumkin)
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.debug("[FlialAPI.checkPoint] error", e?.message);
+      }
       throw e;
     }
   },

@@ -145,8 +145,7 @@ export default function Cart() {
                     className="checkout-card__muted"
                     style={{ fontSize: 13.5, opacity: 0.75, fontWeight: 600 }}
                   >
-                    {fmtMoney(it.price || 0)} • {it.qty || 0}{" "}
-                    {t("common:piece_suffix")}
+                    {it.qty || 0} × {fmtMoney(it.price || 0)}
                   </div>
                 </div>
 
@@ -236,7 +235,9 @@ export default function Cart() {
             {!!items.length && (
               <div className="cart-subcard cart-subcard--pay">
                 <button
-                  className="cart-pay-action"
+                  className={
+                    "cart-pay-action" + (!disablePay ? " is-pulse" : "")
+                  }
                   disabled={disablePay}
                   onClick={goCheckout}
                   type="button"

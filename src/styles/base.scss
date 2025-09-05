@@ -2557,6 +2557,101 @@ body:after {
   &__muted {
     color: var(--muted);
   }
+  &__addr-btn {
+    @extend .btn;
+    @extend .btn--outline;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    padding: 12px 22px 12px 20px;
+    min-height: 48px;
+    border-radius: 18px;
+    line-height: 1.05;
+    background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.06),
+        rgba(255, 255, 255, 0.015)
+      ),
+      color-mix(in oklab, var(--surface) 96%, transparent);
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    border: 1px solid color-mix(in oklab, var(--line) 150%, transparent);
+    transition: border-color 0.25s ease, background 0.35s ease,
+      box-shadow 0.35s ease, transform 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    --addr-btn-accent-a: rgba(120, 60, 255, 0.55);
+    --addr-btn-accent-b: rgba(120, 180, 255, 0.4);
+    &:before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(
+        115deg,
+        var(--addr-btn-accent-a),
+        var(--addr-btn-accent-b)
+      );
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      -webkit-mask-composite: xor;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+    .addr-btn__icon {
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(
+        160deg,
+        var(--addr-btn-accent-a),
+        var(--addr-btn-accent-b)
+      );
+      border-radius: 12px;
+      box-shadow: 0 4px 14px -4px rgba(120, 60, 255, 0.55);
+    }
+    .addr-btn__text {
+      white-space: nowrap;
+      background: linear-gradient(90deg, #fff, #e2f2ff 60%, #fff);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: #fff;
+    }
+    &:hover {
+      border-color: color-mix(in oklab, var(--line) 260%, transparent);
+      background: linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.08),
+          rgba(255, 255, 255, 0.02)
+        ),
+        color-mix(in oklab, var(--surface) 94%, transparent);
+      box-shadow: 0 4px 14px -4px rgba(120, 60, 255, 0.45);
+      transform: translateY(-2px);
+      &:before {
+        opacity: 1;
+      }
+    }
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px -2px rgba(120, 60, 255, 0.5);
+    }
+    &:focus-visible {
+      outline: 0;
+      box-shadow: 0 0 0 3px rgba(120, 60, 255, 0.55),
+        0 0 0 6px rgba(120, 60, 255, 0.25);
+    }
+    &.is-pulse {
+      animation: addrBtnPulse 2.8s ease-in-out infinite;
+    }
+  }
   & + .checkout-card {
     margin-top: 12px;
   }
@@ -2822,6 +2917,27 @@ body:after {
 .paybar__btn--ghost:hover {
   background: color-mix(in oklab, var(--surface-2) 98%, transparent);
 }
+/* Pulse variant for buyurtma (order) button in paybar */
+.paybar__btn.is-pulse {
+  position: relative;
+  animation: addrBtnPulse 3.2s ease-in-out infinite;
+  overflow: hidden;
+}
+.paybar__btn.is-pulse:after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    120deg,
+    rgba(120, 60, 255, 0.55),
+    rgba(120, 180, 255, 0.42)
+  );
+  filter: blur(16px) opacity(0.55);
+  z-index: -1;
+  animation: payGlow 5.4s ease-in-out infinite;
+  pointer-events: none;
+}
 /* Cart total row */
 .cart-total-row {
   margin-top: 18px;
@@ -3023,6 +3139,24 @@ body:after {
     0 0 0 1px rgba(255, 255, 255, 0.07) inset;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), filter 0.25s ease;
 }
+.cart-pay-action.is-pulse {
+  animation: addrBtnPulse 3.1s ease-in-out infinite;
+}
+.cart-pay-action.is-pulse:after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    rgba(120, 60, 255, 0.65),
+    rgba(120, 180, 255, 0.45)
+  );
+  filter: blur(14px) opacity(0.65);
+  z-index: -1;
+  pointer-events: none;
+  animation: payGlow 5s ease-in-out infinite;
+}
 .cart-pay-action:before {
   content: "";
   position: absolute;
@@ -3151,12 +3285,47 @@ body:after {
     grid-template-columns: 1fr;
   }
 }
+/* Pulsating aura for coming soon action (moved out of nested block to avoid mixed-decls warning) */
+@keyframes payGlow {
+  0%,
+  100% {
+    filter: blur(18px) opacity(0.35);
+    transform: scale(0.96);
+  }
+  50% {
+    filter: blur(22px) opacity(0.55);
+    transform: scale(1.02);
+  }
+}
+@keyframes addrBtnPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(120, 60, 255, 0.55),
+      0 0 0 0 rgba(120, 180, 255, 0.4);
+    filter: brightness(1) saturate(1);
+  }
+  55% {
+    box-shadow: 0 0 0 6px rgba(120, 60, 255, 0),
+      0 0 0 10px rgba(120, 180, 255, 0);
+    filter: brightness(1.08) saturate(1.15);
+  }
+}
 .cart-subcard {
   padding: 24px 26px 26px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   position: relative;
+  /* Background styles must precede nested selectors to satisfy upcoming Sass mixed-decls rule */
+  background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.015)
+    ),
+    color-mix(in oklab, var(--surface) 95%, transparent);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border: 0;
   .cart-return-link {
     position: relative;
   }
@@ -3189,26 +3358,6 @@ body:after {
     pointer-events: none;
     z-index: -1;
   }
-  @keyframes payGlow {
-    0%,
-    100% {
-      filter: blur(18px) opacity(0.35);
-      transform: scale(0.96);
-    }
-    50% {
-      filter: blur(22px) opacity(0.55);
-      transform: scale(1.02);
-    }
-  }
-  background: linear-gradient(
-      145deg,
-      rgba(255, 255, 255, 0.06),
-      rgba(255, 255, 255, 0.015)
-    ),
-    color-mix(in oklab, var(--surface) 95%, transparent);
-  backdrop-filter: blur(14px) saturate(150%);
-  -webkit-backdrop-filter: blur(14px) saturate(150%);
-  border: 0;
 }
 /* DeliveryGuard modal */
 .delivery-guard-backdrop {
@@ -3473,6 +3622,15 @@ body:after {
 .page.has-paybar .cart-fab-mobile {
   display: none !important;
 }
+
+/* Checkout sahifada pastki fixed paybar ostiga kontent tushib ketmasligi uchun quyi bo'shliq */
+.checkout.page.has-paybar {
+  /* paybar balandligi + xavfsiz zona + qo'shimcha buffer */
+  padding-bottom: calc(
+    var(--paybar-h) + 32px + env(safe-area-inset-bottom, 0px)
+  );
+}
+/* Agar ichida .paybar yo'q bo'lsa fallback yo'q – shart emas, lekin qatlam moslashuvi uchun */
 
 /* Disabled holat (umumiy) */
 .btn[disabled],
