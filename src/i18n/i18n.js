@@ -31,7 +31,7 @@ export const resources = {
     checkout: {
       cart: "Savat",
       cart_empty: "Savat bo‘sh",
-      note_for_restaurant: "Restoran uchun izoh",
+      note_for_restaurant: "Kuryer uchun izoh",
       note_placeholder: "Izoh ...",
       address: "Manzil",
       address_not_selected: "Manzil tanlanmagan",
@@ -113,7 +113,7 @@ export const resources = {
     checkout: {
       cart: "Корзина",
       cart_empty: "Корзина пуста",
-      note_for_restaurant: "Комментарий для ресторана",
+      note_for_restaurant: "Комментарий для курьера",
       note_placeholder: "Комментарий...",
       address: "Адрес",
       address_not_selected: "Адрес не выбран",
