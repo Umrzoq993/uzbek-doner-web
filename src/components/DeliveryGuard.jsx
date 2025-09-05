@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { AlertTriangle, MapPin, RefreshCcw } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { AlertTriangle, MapPin, RefreshCcw, RotateCcw } from "lucide-react";
 import { FlialAPI } from "../lib/api";
 import { useLocationStore } from "../store/location";
 import { useT } from "../i18n/i18n";
@@ -10,47 +10,106 @@ export default function DeliveryGuard({ onForceGeo }) {
   const availability = useLocationStore((s) => s.availability);
   const setAvailability = useLocationStore((s) => s.setAvailability);
   const [_, setChecking] = useState(false); // internal flag (not rendered)
+  const runningRef = useRef(false);
+
+  // Manual retry: reset availability to trigger effect
+  const retryCheck = useCallback(() => {
+    if (!place) return;
+    setAvailability({
+      checked: false,
+      available: false,
+      reason: null,
+      flial: null,
+    });
+  }, [place, setAvailability]);
 
   useEffect(() => {
     let cancelled = false;
     const lat = place?.lat;
     const lon = place?.lon;
     (async () => {
-      if (!place || availability.checked) return;
-      setChecking(true);
-      try {
-        const data = await FlialAPI.checkPoint({
-          latitude: lat,
-          longitude: lon,
-        });
-        if (cancelled) return;
-        // Ignore stale response if place changed mid-flight
-        if (lat !== place.lat || lon !== place.lon) return;
+      if (!place || availability.checked || runningRef.current) return;
+      runningRef.current = true;
+
+      const classify = (data) => {
         if (data?.status && data?.flial?.id) {
-          setAvailability({
-            checked: true,
-            available: true,
-            flial: data.flial,
-            reason: null,
-          });
-        } else {
-          setAvailability({
-            checked: true,
-            available: false,
-            flial: null,
-            reason: "unavailable",
-          });
+          return { available: true, reason: null, flial: data.flial };
         }
-      } catch {
-        if (!cancelled)
-          setAvailability({
-            checked: true,
-            available: false,
-            flial: null,
-            reason: "error",
+        // Aniq rad javobi: status === false va filial yo'q
+        if (data && data.status === false && !data?.flial?.id) {
+          return { available: false, reason: "unavailable", flial: null };
+        }
+        // Shakli tushunarsiz yoki status property yo'q -> error sifatida qaytamiz
+        return { available: false, reason: "error", flial: null };
+      };
+
+      const runOnce = async () => {
+        try {
+          const data = await FlialAPI.checkPoint({
+            latitude: lat,
+            longitude: lon,
           });
-      } finally {
-        if (!cancelled) setChecking(false);
+          if (import.meta.env.DEV) {
+            // eslint-disable-next-line no-console
+            console.debug("[DeliveryGuard] checkPoint response", data);
+          }
+          return { ok: true, data };
+        } catch (e) {
+          if (import.meta.env.DEV) {
+            // eslint-disable-next-line no-console
+            console.debug("[DeliveryGuard] checkPoint error", e);
+          }
+          return { ok: false, error: e };
+        }
+      };
+
+      setChecking(true);
+      let attempt = 0;
+      let finalResult = null;
+      while (attempt < 2 && !cancelled) {
+        const res = await runOnce();
+        if (cancelled) break;
+        // Ignore stale response if place changed mid-flight
+        if (lat !== place.lat || lon !== place.lon) {
+          break;
+        }
+        if (!res.ok) {
+          // Network yoki timeout – faqat bitta retry qilishga arziydi
+          if (attempt === 0) {
+            attempt++;
+            continue;
+          } else {
+            finalResult = { available: false, reason: "error", flial: null };
+            break;
+          }
+        } else {
+          const cls = classify(res.data);
+          if (cls.available) {
+            finalResult = cls;
+            break;
+          }
+          // Agar unavailable chiqsa va bu birinchi urinish bo'lsa – transient ehtimoli uchun bitta retry
+          if (cls.reason === "unavailable" && attempt === 0) {
+            attempt++;
+            continue;
+          }
+          // error yoki ikkinchi martada ham unavailable – qabul qilamiz
+          finalResult = cls;
+          break;
+        }
+      }
+
+      if (!cancelled && finalResult) {
+        setAvailability({
+          checked: true,
+          available: finalResult.available,
+          flial: finalResult.flial,
+          reason: finalResult.reason,
+        });
+      }
+      if (!cancelled) {
+        setChecking(false);
+        runningRef.current = false;
       }
     })();
     return () => {
@@ -88,6 +147,7 @@ export default function DeliveryGuard({ onForceGeo }) {
           </div>
         )}
         <div className="delivery-guard__actions">
+          {/* Manzilni o'zgartirish */}
           {!isError && (
             <button
               className="btn btn--primary delivery-guard__btn"
@@ -96,13 +156,22 @@ export default function DeliveryGuard({ onForceGeo }) {
               {t("checkout:delivery_unavailable_change")}
             </button>
           )}
+          {/* Qayta tekshirish (har ikki holatda) */}
+          <button
+            className="btn btn--outline delivery-guard__btn"
+            onClick={retryCheck}
+            type="button"
+          >
+            <RotateCcw size={16} style={{ marginRight: 6 }} />
+            {t("common:retry") || "Qayta tekshirish"}
+          </button>
           {isError && (
             <button
               className="btn btn--primary delivery-guard__btn"
               onClick={() => window.location.reload()}
             >
               <RefreshCcw size={16} style={{ marginRight: 6 }} />
-              {t("common:retry") || "Qayta urinish"}
+              {t("common:reload") || "Sahifani yangilash"}
             </button>
           )}
         </div>
