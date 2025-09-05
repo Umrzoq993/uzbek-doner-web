@@ -75,27 +75,6 @@ export default function AppHeader() {
 
           {/* Cart button header varianti olib tashlandi – endi har doim floating FAB */}
 
-          <button
-            type="button"
-            onClick={() => setLang(lang === "uz" ? "ru" : "uz")}
-            className="chip lang-switch"
-            style={{
-              fontSize: 12,
-              marginLeft: 12,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-            aria-label="Switch language"
-          >
-            <span className="lang-switch__flag" aria-hidden>
-              {lang === "uz" ? "🇷🇺" : "🇺🇿"}
-            </span>
-            <span className="lang-switch__code">
-              {lang === "uz" ? "RU" : "UZ"}
-            </span>
-          </button>
-
           {/* Manzil ko'rsatish / o'zgartirish – endi doimiy ko'rsatamiz (agar place bor) */}
           {place ? (
             <div
@@ -110,7 +89,7 @@ export default function AppHeader() {
               <button
                 type="button"
                 onClick={() => setOpenPicker(true)}
-                className="header-loc__btn"
+                className="header-loc__btn header-loc__btn--chipy"
                 aria-label={
                   lang === "ru" ? "Изменить адрес" : "Manzilni o'zgartirish"
                 }
@@ -169,6 +148,28 @@ export default function AppHeader() {
               {t("common:select_address_button")}
             </button>
           )}
+
+          {/* Til almashtirish tugmasi – manzildan keyinga ko'chirildi */}
+          <button
+            type="button"
+            onClick={() => setLang(lang === "uz" ? "ru" : "uz")}
+            className="chip lang-switch"
+            style={{
+              fontSize: 12,
+              marginLeft: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+            aria-label="Switch language"
+          >
+            <span className="lang-switch__flag" aria-hidden>
+              {lang === "uz" ? "🇷🇺" : "🇺🇿"}
+            </span>
+            <span className="lang-switch__code">
+              {lang === "uz" ? "RU" : "UZ"}
+            </span>
+          </button>
         </div>
       </header>
 

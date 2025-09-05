@@ -155,6 +155,34 @@
     0 0 0 1px rgba(255, 255, 255, 0.14) inset;
   transition: box-shadow 0.25s ease, transform 0.18s ease, filter 0.25s ease;
 }
+/* Variant: glassy chip look to match language switch */
+.header-loc__btn.header-loc__btn--chipy {
+  background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.16),
+      rgba(255, 255, 255, 0.06)
+    ),
+    linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  background-blend-mode: overlay, normal;
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  color: #fff;
+  box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+}
+.header-loc__btn.header-loc__btn--chipy:hover {
+  filter: none;
+  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.22) inset,
+    0 4px 16px -4px rgba(120, 60, 255, 0.35);
+  transform: translateY(-2px);
+}
+.header-loc__btn.header-loc__btn--chipy:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px -2px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.26) inset,
+    0 2px 10px -2px rgba(120, 60, 255, 0.3);
+}
 /* Cart page top spacing to avoid header overlap */
 .page--cart {
   /* Dynamic: header fixed on desktop => need offset; on mobile header is static so small top space */
@@ -727,7 +755,7 @@ body:after {
 }
 
 /* -----------------------------
-   Grid & Card
+  Grid & Card
 ------------------------------*/
 .grid {
   display: grid;
@@ -2491,23 +2519,57 @@ body:after {
   border-radius: 9999px;
   display: grid;
   place-items: center;
-  @include gradient-brand;
+  /* Distinct background (avoid clash with add buttons) */
+  background: linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--cart-fab-g1) 88%, #000) 0%,
+      var(--cart-fab-g1) 32%,
+      var(--cart-fab-g2) 56%,
+      var(--cart-fab-g3) 100%
+    ),
+    radial-gradient(
+      circle at 28% 22%,
+      rgba(255, 255, 255, 0.15),
+      transparent 70%
+    );
+  background-blend-mode: overlay, normal;
   color: #fff;
-  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.28);
+  /* Light outer border for contrast when overlapping similar gradients */
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-sizing: border-box;
+  outline: 1px solid rgba(255, 255, 255, 0.12);
+  outline-offset: 2px; /* subtle halo ring */
+  box-shadow: 0 10px 28px -4px rgba(30, 27, 75, 0.6),
+    0 4px 16px -4px rgba(79, 70, 229, 0.55);
   animation: heartbeat 1.8s ease-in-out infinite;
   will-change: transform;
+  transition: box-shadow 0.4s ease, background 0.5s ease;
 
   &__badge {
     position: absolute;
-    top: -6px;
-    right: -6px;
+    top: 0;
+    right: 0;
+    transform: translate(48%, -48%); /* push outward so it hugs outer rim */
     background: #ff4d4f;
     color: #fff;
     border-radius: 9999px;
     font-weight: 800;
-    font-size: 12px;
-    padding: 2px 6px;
+    font-size: 14px; /* was 12px */
+    line-height: 1;
+    padding: 4px 8px; /* increase tap target */
+    min-width: 30px;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.5px;
     box-shadow: 0 6px 16px rgba(255, 77, 79, 0.35);
+    backdrop-filter: blur(4px) saturate(130%);
+    -webkit-backdrop-filter: blur(4px) saturate(130%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    /* Handle large numbers gracefully */
+    padding-inline: clamp(8px, 2px + 1ch, 14px);
+    will-change: transform;
   }
 }
 
@@ -2793,47 +2855,134 @@ body:after {
     transform: translateY(-1px);
     box-shadow: var(--shadow-hover);
   }
-  &.is-active {
-    border-color: color-mix(in oklab, var(--brand) 65%, transparent);
-    box-shadow: 0 0 0 2px color-mix(in oklab, var(--brand) 35%, transparent),
-      var(--shadow-1);
+  /* Custom properties for snake animation */
+  --cart-snake-speed: 1.8s; /* rotation speed (matches heartbeat for sync) */
+  --cart-snake-glow-scale: 1.15; /* extra scale at pulse peak */
+  --cart-snake-colors: #ffca3a, #ff595e, #8ac926, #1982c4, #6a4c93, #ffca3a;
+  --cart-snake-inner-fade: radial-gradient(
+    circle at 32% 28%,
+    rgba(255, 255, 255, 0.25),
+    rgba(255, 255, 255, 0.04)
+  );
+
+  /* snake ring */
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
   }
-  &.is-disabled {
+  &::before {
+    padding: 2px;
+    background: conic-gradient(from 0deg, var(--cart-snake-colors));
+    -webkit-mask: linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    animation: cart-snake-spin var(--cart-snake-speed) linear infinite,
+      cart-snake-glow 1.8s ease-in-out infinite;
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.45));
+    will-change: transform, filter;
+    z-index: 2;
+  }
+  &::after {
+    inset: 0;
+    z-index: 1;
+    background: radial-gradient(
+        circle at 50% 50%,
+        rgba(120, 90, 255, 0.55),
+        rgba(120, 90, 255, 0) 65%
+      ),
+      radial-gradient(
+        circle at 30% 28%,
+        rgba(255, 255, 255, 0.18),
+        rgba(255, 255, 255, 0) 70%
+      ),
+      var(--cart-snake-inner-fade);
     opacity: 0.55;
-    cursor: not-allowed;
+    filter: blur(6px) brightness(1.15) saturate(1.2);
+    transform: scale(0.92);
+    animation: cart-fab-halo 1.8s ease-in-out infinite;
+    mix-blend-mode: plus-lighter;
   }
-}
-.radio-card__title {
-  font-weight: 800;
-}
-.radio-card__sub {
-  color: var(--muted);
-  font-size: 13px;
-}
-.discount-pill {
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-weight: 800;
-  font-size: 12px;
-  color: #fff;
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
+  /* Hover: accelerate ring (1.2x) */
+  &:hover::before {
+    animation-duration: calc(var(--cart-snake-speed) * 0.75), 1.8s; /* only first (spin) speeds up */
+  }
+  /* Active: even faster */
+  &:active::before {
+    animation-duration: calc(var(--cart-snake-speed) * 0.55), 1.8s;
+  }
+  /* Modifier for slower ambient rotation */
+  &.cart-fab--calm::before {
+    animation-duration: 3.6s, 1.8s; /* spin slower, glow still synced */
+  }
+  &:hover {
+    box-shadow: 0 14px 38px -8px rgba(30, 27, 75, 0.75),
+      0 6px 20px -4px rgba(79, 70, 229, 0.6),
+      0 0 0 1px rgba(255, 255, 255, 0.14) inset;
+    outline-color: rgba(255, 255, 255, 0.18);
+  }
+  &:active {
+    box-shadow: 0 8px 22px -6px rgba(30, 27, 75, 0.65),
+      0 4px 14px -4px rgba(79, 70, 229, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+    outline-color: rgba(255, 255, 255, 0.25);
+  }
 }
 
-/* O'ng panel — To'lov uchun (soft white gradient) */
-.summary {
-  display: grid;
-  gap: 12px;
+@keyframes cart-snake-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
-.summary-card {
-  @include card-surface(18px);
-  padding: 14px;
-  background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.06),
-      rgba(255, 255, 255, 0.02)
-    ),
-    var(--surface);
+@keyframes cart-snake-glow {
+  0%,
+  24%,
+  60%,
+  100% {
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.35)) brightness(1);
+  }
+  12% {
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.55)) brightness(1.15);
+  }
+  36% {
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5)) brightness(1.1);
+  }
+}
+
+@keyframes cart-fab-halo {
+  0%,
+  60%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.92);
+    filter: blur(6px) brightness(1.15) saturate(1.2);
+  }
+  12% {
+    opacity: 0.92;
+    transform: scale(1.08);
+    filter: blur(10px) brightness(1.35) saturate(1.35);
+  }
+  36% {
+    opacity: 0.75;
+    transform: scale(1.02);
+    filter: blur(7px) brightness(1.25) saturate(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cart-fab,
+  .cart-fab-mobile {
+    animation: none;
+  }
+  .cart-fab::before,
+  .cart-fab-mobile::before {
+    animation: none;
+  }
 }
 .summary-list {
   display: grid;

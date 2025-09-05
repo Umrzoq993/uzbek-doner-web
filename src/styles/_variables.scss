@@ -2,6 +2,11 @@
   /* Brand */
   --brand: #6c38ff;
   --brand-2: #8b5cff;
+  /* Cart FAB distinct palette (avoid same look as add button) */
+  --cart-fab-g1: #1e1b4b; /* deep indigo/navy */
+  --cart-fab-g2: #2c2f58; /* muted slate-indigo */
+  --cart-fab-g3: #4f46e5; /* indigo 600 */
+  --cart-fab-glow: 180 92% 62%; /* HSL pieces for optional future dynamic glow */
 
   /* Surfaces (dark-blue aurora) */
   --bg: #0b1b2b;
