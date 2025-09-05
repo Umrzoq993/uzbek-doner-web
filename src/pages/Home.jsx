@@ -423,7 +423,6 @@ import QtyControl from "../components/QtyControl";
 function ProductCard({ product, qty, onAdd, onInc, onDec, onOpen, lang }) {
   const t = useT();
   const fmtMoney = useMoneyFormatter();
-  const hasQty = qty > 0;
   const numRef = useRef(null);
 
   // qty o‘zgarganda “pop” anim

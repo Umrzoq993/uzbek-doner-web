@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useMemo, useEffect, useRef, useState } from "react";
+import { useMemo } from "react";
 import { ShoppingCart, ChevronLeft } from "lucide-react";
 import { useCart } from "../store/cart";
 import { useT } from "../i18n/i18n";
@@ -15,7 +15,6 @@ export default function AppHeader() {
   const place = useLocationStore((s) => s.place);
   const availability = useLocationStore((s) => s.availability);
   const setOpenPicker = useLocationStore((s) => s.setOpenPicker);
-  const clearPlace = useLocationStore((s) => s.clearPlace);
 
   const count = useMemo(
     () => items.reduce((s, i) => s + (i.qty || 0), 0),
@@ -34,16 +33,7 @@ export default function AppHeader() {
     else nav("/");
   };
 
-  const prevCountRef = useRef(count);
-  const [bump, setBump] = useState(false);
-  useEffect(() => {
-    if (prevCountRef.current !== count) {
-      setBump(true);
-      const timer = setTimeout(() => setBump(false), 450);
-      prevCountRef.current = count;
-      return () => clearTimeout(timer);
-    }
-  }, [count]);
+  // (removed unused bump animation + clearPlace to satisfy lint)
 
   return (
     <>

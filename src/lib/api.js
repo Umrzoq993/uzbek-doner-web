@@ -135,7 +135,6 @@ export const FlialAPI = {
         data?.detail === "Unauthorized"
       ) {
         if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
           console.debug("[FlialAPI.checkPoint] 401 first attempt", data);
         }
         tokenStore.clear();
@@ -148,14 +147,12 @@ export const FlialAPI = {
         data = retry.data;
         status = retry.status;
         if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
           console.debug("[FlialAPI.checkPoint] retry resp", data);
         }
       }
       return data;
     } catch (e) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.debug("[FlialAPI.checkPoint] error", e?.message);
       }
       throw e;

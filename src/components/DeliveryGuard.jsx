@@ -50,13 +50,11 @@ export default function DeliveryGuard({ onForceGeo }) {
             longitude: lon,
           });
           if (import.meta.env.DEV) {
-            // eslint-disable-next-line no-console
             console.debug("[DeliveryGuard] checkPoint response", data);
           }
           return { ok: true, data };
         } catch (e) {
           if (import.meta.env.DEV) {
-            // eslint-disable-next-line no-console
             console.debug("[DeliveryGuard] checkPoint error", e);
           }
           return { ok: false, error: e };

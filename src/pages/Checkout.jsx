@@ -69,10 +69,7 @@ export default function Checkout() {
     () => items.reduce((s, i) => s + (i.price || 0) * (i.qty || 0), 0),
     [items]
   );
-  const totalQty = useMemo(
-    () => items.reduce((s, i) => s + (i.qty || 0), 0),
-    [items]
-  );
+  // totalQty removed (unused)
   const total = Math.max(0, subtotal + (deliveryPrice || 0));
   // Buyurtma shartlari (puls faqat tayyor bo'lsa yoqiladi)
   const canOrder =
@@ -96,7 +93,7 @@ export default function Checkout() {
           latitude: lat,
           longitude: lon,
         });
-        if (process.env.NODE_ENV !== "production") {
+        if (import.meta.env.DEV) {
           console.debug("[Checkout] checkPoint resp", data);
         }
         if (cancelled) return;
@@ -115,7 +112,7 @@ export default function Checkout() {
           setDistanceKm(null);
         }
       } catch {
-        if (process.env.NODE_ENV !== "production") {
+        if (import.meta.env.DEV) {
           console.debug("[Checkout] checkPoint error");
         }
         if (!cancelled) {
@@ -192,30 +189,7 @@ export default function Checkout() {
     }
   };
 
-  const handlePay = () => {
-    if (!validPhone) {
-      toast?.error?.(t("checkout:toast_phone_required"));
-      return;
-    }
-    if (payMethod !== "cash") {
-      toast?.warn?.(
-        (lang === "ru"
-          ? "Пока что работает только оплата наличными"
-          : "Hozircha faqat naqd to'lov ishlaydi") +
-          (payMethod === "payme"
-            ? " (Payme)"
-            : payMethod === "click"
-            ? " (Click)"
-            : "")
-      );
-      return;
-    }
-    if (skipConfirm) {
-      submitOrder();
-      return;
-    }
-    setConfirmOpen(true);
-  };
+  // handlePay removed (logic inlined in paybar button)
 
   const confirmAndSend = async () => {
     setConfirmOpen(false);

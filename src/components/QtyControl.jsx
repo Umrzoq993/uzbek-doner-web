@@ -16,7 +16,7 @@ import { useEffect, useRef } from "react";
 */
 export default function QtyControl({
   value = 0,
-  min = 1,
+  // min removed (was unused after UX change; assumed 1)
   max,
   onAdd,
   onInc,
@@ -79,7 +79,7 @@ export default function QtyControl({
     );
   }
 
-  const atMin = value <= min; // endi disable qilinmaydi, faqat vizual uchun foydalanish mumkin
+  // atMin (removed as unused)
   const atMax = max != null && value >= max;
 
   // Dynamic accessible enlargement: if user has already increased (>=2) we can switch to xlg visual size
