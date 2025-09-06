@@ -154,7 +154,15 @@ export default function AppHeader() {
             aria-label="Switch language"
           >
             <span className="lang-switch__flag" aria-hidden>
-              {lang === "uz" ? "🇷🇺" : "🇺🇿"}
+              <img
+                src={lang === "uz" ? "/flags/ru.svg" : "/flags/uz.svg"}
+                alt=""
+                width={18}
+                height={12}
+                style={{ display: "block", borderRadius: 2 }}
+                loading="eager"
+                decoding="sync"
+              />
             </span>
             <span className="lang-switch__code">
               {lang === "uz" ? "RU" : "UZ"}

@@ -1,4 +1,5 @@
 // src/components/Footer.jsx
+import { Phone, Clock } from "lucide-react";
 import { useT } from "../i18n/i18n";
 
 export default function Footer() {
@@ -14,9 +15,29 @@ export default function Footer() {
         <div className="footer__col">
           <div className="footer__title">{t("footer:contacts")}</div>
           <ul className="footer__list">
-            <li>📞 +998 (90) 000‒00‒00</li>
-            <li>✉️ support@uzbekdoner.uz</li>
-            <li>🕒 10:00 — 23:00</li>
+            <li className="footer__item">
+              <span className="footer__icon" aria-hidden>
+                <Phone size={16} strokeWidth={2} />
+              </span>
+              <span className="footer__item-text">
+                {t("footer:for_order")}:
+                <a
+                  className="footer__contact"
+                  href="tel:+998785550404"
+                  aria-label="Call +998785550404"
+                >
+                  +998785550404
+                </a>
+              </span>
+            </li>
+            <li className="footer__item">
+              <span className="footer__icon" aria-hidden>
+                <Clock size={16} strokeWidth={2} />
+              </span>
+              <span className="footer__item-text">
+                {t("footer:working_hours", { from: "09:00", to: "03:00" })}
+              </span>
+            </li>
           </ul>
         </div>
         <div className="footer__col">

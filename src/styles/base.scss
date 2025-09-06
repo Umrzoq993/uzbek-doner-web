@@ -301,9 +301,12 @@
     0 2px 12px -2px rgba(120, 60, 255, 0.38);
 }
 .lang-switch__flag {
-  font-size: 16px;
-  filter: saturate(1.1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
-  transform: translateY(1px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 12px;
+  filter: saturate(1.05) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.18));
 }
 .lang-switch__code {
   font-size: 12px;
@@ -1935,9 +1938,15 @@ body:after {
 
 .footer {
   margin-top: 28px;
-  background: color-mix(in oklab, var(--surface) 96%, transparent);
+  background: radial-gradient(
+      1000px 260px at 80% 0%,
+      rgba(108, 56, 255, 0.08),
+      transparent 60%
+    ),
+    color-mix(in oklab, var(--surface) 96%, transparent);
   border-top: 1px solid var(--line);
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.02) inset;
   position: relative;
   z-index: 1;
 
@@ -1950,15 +1959,15 @@ body:after {
   }
   &__col {
     display: grid;
-    gap: 8px;
+    gap: 10px;
   }
   &__brand {
     font-size: 22px;
     font-weight: 900;
   }
   &__title {
-    font-weight: 800;
-    margin-bottom: 4px;
+    font-weight: 850;
+    margin-bottom: 2px;
   }
   &__muted {
     color: var(--muted);
@@ -1966,7 +1975,7 @@ body:after {
   &__list,
   &__links {
     display: grid;
-    gap: 6px;
+    gap: 8px;
   }
   &__links a {
     color: var(--fg);
@@ -1975,10 +1984,73 @@ body:after {
       text-decoration: underline;
     }
   }
+
+  /* Contact items as soft pills */
+  &__item {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in oklab, var(--line) 90%, transparent);
+    border-radius: 14px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.02)
+    );
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18),
+      0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+    transition: transform 0.18s ease, box-shadow 0.18s ease,
+      background 0.25s ease;
+  }
+  &__item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.03)
+    );
+  }
+  &__icon {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    color: color-mix(in oklab, var(--brand) 72%, var(--fg));
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+  }
+  &__item-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  &__contact {
+    color: var(--fg);
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    text-decoration: none;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: background 0.18s ease, border-color 0.18s ease;
+  }
+  &__contact:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.18);
+    text-decoration: none;
+  }
 }
 .subfooter {
   border-top: 1px dashed var(--line);
-  background: var(--surface-2);
+  background: linear-gradient(
+    180deg,
+    var(--surface-2),
+    color-mix(in oklab, var(--surface-2) 92%, transparent)
+  );
 }
 .subfooter__inner {
   display: flex;

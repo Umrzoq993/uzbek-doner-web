@@ -27,6 +27,8 @@ export const resources = {
       menu: "Menyu",
       payment: "To‘lov",
       made_with: "Made with ❤️",
+      for_order: "Buyurtma uchun",
+      working_hours: "Ish vaqti: {{from}} dan {{to}} gacha",
     },
     checkout: {
       cart: "Savat",
@@ -110,6 +112,8 @@ export const resources = {
       menu: "Меню",
       payment: "Оплата",
       made_with: "Сделано с ❤️",
+      for_order: "Для заказа",
+      working_hours: "Время работы: с {{from}} до {{to}}",
     },
     checkout: {
       cart: "Корзина",
